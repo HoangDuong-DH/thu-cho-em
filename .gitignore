@@ -1,0 +1,14 @@
+# Local tooling
+.claude/
+settings.local.json
+
+# Original image backups (duplicated as semantic filenames)
+z7755*.jpg
+
+# Node
+node_modules/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
