@@ -20,56 +20,67 @@ addEventListener("dblclick", (e) => {
 // Each mood has a carousel of slides + music pattern
 const MOODS = {
     happy: {
-        color: "#e86a92",
-        tempo: 0.28,
-        notes: [523.25, 659.25, 783.99, 1046.5, 783.99, 659.25],
+        color: "#ff8fb0",
+        tempo: 0.26,
+        notes: [523.25, 659.25, 783.99, 1046.5, 987.77, 1046.5, 783.99, 659.25],
         slides: [
-            { img: "hi-paw.jpg",       title: "Vui thật hả em",       text: "Giữ lại khoảnh khắc này. Không phải ngày nào cũng có." },
-            { img: "happy-hearts.jpg", title: "Xinh quá",              text: "Niềm vui của em đáng giá hơn em nghĩ." },
-            { img: "heart-offer.jpg",  title: "Cho em này",            text: "Một phần nhỏ anh gửi em. Giữ kỹ nha." },
+            { img: "hi-paw.jpg",       title: "Vui ghê đó",             text: "Giữ lấy cảm giác này đi. Không phải ngày nào cũng có đâu nha." },
+            { img: "happy-hearts.jpg", title: "Em cười xinh thật",      text: "Anh nói thiệt đó, không phải khen lấy lòng đâu." },
+            { img: "heart-offer.jpg",  title: "Anh gửi em cái này",     text: "Thêm một miếng vui nữa — để ngày em đẹp gấp đôi." },
         ],
     },
     excited: {
-        color: "#c64c74",
-        tempo: 0.22,
-        notes: [659.25, 783.99, 987.77, 1046.5, 1174.66, 1046.5, 987.77, 783.99],
+        color: "#ef6f93",
+        tempo: 0.2,
+        notes: [659.25, 783.99, 987.77, 1174.66, 1318.51, 1174.66, 987.77, 783.99],
         slides: [
-            { img: "cat_dance.gif",    title: "Năng lượng xịn đó",      text: "Thấy em vậy là anh cũng lây theo rồi." },
-            { img: "flower-gift.jpg",  title: "Cho em nè",              text: "Một bó — cho một ngày đẹp của em." },
-            { img: "thuong-lam.jpg",   title: "Thương em",              text: "Giữ cái mood này, mai tính tiếp." },
+            { img: "cat_dance.gif",    title: "Năng lượng xịn ghê",     text: "Thấy em vậy là anh cũng lây theo luôn rồi." },
+            { img: "flower-gift.jpg",  title: "Tặng em bó này",         text: "Ngày đẹp phải có hoa mới đủ bộ chứ." },
+            { img: "thuong-lam.jpg",   title: "Thương em bể trời",      text: "Giữ cái vibe này nha em, mai tính tiếp." },
         ],
     },
     normal: {
-        color: "#e86a92",
+        color: "#ff8fb0",
         tempo: 0.34,
-        notes: [523.25, 587.33, 659.25, 783.99, 659.25, 587.33],
+        notes: [523.25, 587.33, 659.25, 783.99, 880, 783.99, 659.25, 587.33],
         slides: [
-            { img: "bleh.jpg",         title: "Bình thường cũng ổn",    text: "Không phải lúc nào cũng phải rực rỡ mới đáng." },
-            { img: "flower-gift.jpg",  title: "Có hoa nè",              text: "Để ngày thường thơm hơn một chút." },
-            { img: "bouquet.jpg",      title: "Cho em xứng đáng",       text: "Kể cả những ngày không có gì đặc biệt." },
+            { img: "bleh.jpg",         title: "Bình thường cũng đáng",  text: "Không phải ngày nào cũng cần rực rỡ đâu em. Vậy là ổn rồi." },
+            { img: "flower-gift.jpg",  title: "Có hoa cho em nè",       text: "Để ngày thường của em thơm hơn một chút." },
+            { img: "bouquet.jpg",      title: "Em xứng đáng mà",        text: "Kể cả những ngày chẳng có gì đặc biệt — vẫn xứng." },
         ],
     },
     sad: {
-        color: "#9a5f7a",
+        color: "#c994c4",
         tempo: 0.44,
-        notes: [440, 392, 349.23, 329.63, 349.23, 392],
+        notes: [440, 392, 349.23, 329.63, 349.23, 392, 440, 493.88],
         slides: [
-            { img: "hug.jpg",          title: "Lại đây anh ôm cái",     text: "Buồn một chút cũng không sao. Không phải lỗi của em." },
-            { img: "cat_heart.gif",    title: "Anh đây",                 text: "Thở một hơi dài rồi kể anh nghe, nếu em muốn." },
-            { img: "thuong-lam.jpg",   title: "Thương em",              text: "Em không cần đi qua cái này một mình." },
+            { img: "hug.jpg",          title: "Lại đây anh ôm cái",     text: "Buồn một chút cũng không sao đâu. Không phải lỗi của em." },
+            { img: "cat_heart.gif",    title: "Anh ở đây này",          text: "Thở một hơi sâu đi. Rồi kể anh nghe, nếu em muốn." },
+            { img: "thuong-lam.jpg",   title: "Thương em lắm",          text: "Em không phải đi qua cái này một mình đâu." },
         ],
     },
     tired: {
-        color: "#8a6f9e",
-        tempo: 0.52,
-        notes: [523.25, 493.88, 440, 392, 440, 493.88],
+        color: "#b39bd8",
+        tempo: 0.5,
+        notes: [523.25, 493.88, 440, 392, 440, 493.88, 523.25, 587.33],
         slides: [
-            { img: "hug.jpg",          title: "Nghỉ đi em",             text: "Mệt thì dừng. Em không cần giải thích với ai." },
-            { img: "cat_heart.gif",    title: "Nhắm mắt chút",           text: "Nghe nhạc thôi, không cần làm gì cả." },
-            { img: "bouquet.jpg",      title: "Mai tính tiếp",           text: "Hôm nay em tồn tại là đã đủ." },
+            { img: "hug.jpg",          title: "Nghỉ đi em",             text: "Mệt thì dừng lại thôi. Em không cần giải thích với ai cả." },
+            { img: "cat_heart.gif",    title: "Nhắm mắt chút đi",       text: "Để nhạc chạy nhẹ thôi, em không cần làm gì hết." },
+            { img: "bouquet.jpg",      title: "Mai tính tiếp nha",      text: "Giờ chỉ cần thở nhẹ thôi. Em vẫn ổn mà." },
         ],
     },
 };
+
+// ================== Preload mood + scene images ==================
+// Avoid flicker + layout shift when switching to a scene
+const PRELOAD = [
+    "hi-paw.jpg", "happy-hearts.jpg", "heart-offer.jpg",
+    "cat_dance.gif", "flower-gift.jpg", "thuong-lam.jpg",
+    "bleh.jpg", "bouquet.jpg",
+    "hug.jpg", "cat_heart.gif",
+    "smug.jpg", "love-you.jpg",
+];
+PRELOAD.forEach(src => { const i = new Image(); i.src = src; });
 
 // ================== Scene order (progress bar) ==================
 const SCENE_ORDER = ["envelope","greeting","mood","gift","feelingCheck","smug","reminders","love"];
@@ -91,14 +102,15 @@ function updateProgress(scene) {
 
 // ================== Scene transitions ==================
 let currentScene = "envelope";
-async function goTo(scene) {
+function goTo(scene) {
     if (scene === currentScene) return;
     const cur = $(`.scene[data-scene="${currentScene}"]`);
     const next = $(`.scene[data-scene="${scene}"]`);
     if (!next) return;
+    // Crossfade: start both transitions in the same frame for smoothness
     cur.classList.remove("active");
-    await new Promise(r => setTimeout(r, 280));
-    next.classList.add("active");
+    next.scrollTop = 0;
+    requestAnimationFrame(() => next.classList.add("active"));
     currentScene = scene;
     if (scene !== "envelope") document.body.classList.add("started");
     updateProgress(scene);
@@ -106,24 +118,28 @@ async function goTo(scene) {
 }
 
 function onSceneEnter(scene) {
+    if (scene === "greeting") {
+        playChord([659.25, 783.99, 987.77], 0.35, "triangle", 0.17);
+    }
     if (scene === "mood") {
         stopMelody();
-        playMelody([659.25, 783.99, 1046.5], 0.25, false);
+        playChord([523.25, 659.25, 783.99, 1046.5], 0.35, "triangle", 0.17);
     }
     if (scene === "feelingCheck") {
         fcNoAttempts = 0;
         resetNoBtn();
+        playChord([587.33, 740, 880], 0.32, "triangle", 0.15);
     }
     if (scene === "smug") {
         playMelody([523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5], 0.18, false);
         setTimeout(() => smallConfetti(80), 200);
     }
     if (scene === "reminders") {
-        playMelody([523.25, 587.33, 659.25, 783.99], 0.3, false);
+        playMelody([523.25, 587.33, 659.25, 783.99, 659.25, 523.25], 0.28, false);
     }
     if (scene === "love") {
         launchConfetti();
-        playMelody([523.25, 659.25, 783.99, 1046.5, 987.77, 783.99, 659.25, 523.25], 0.3, true);
+        playMelody([523.25, 659.25, 783.99, 1046.5, 987.77, 783.99, 659.25, 523.25], 0.28, true);
     }
 }
 
@@ -139,9 +155,10 @@ function openEnvelope() {
     if (envelope.classList.contains("opening")) return;
     envelope.classList.add("opening");
     resumeAudio();
-    playTone(660, 0.12);
+    // opening sparkle: a little rising arpeggio
+    playChord([523.25, 659.25, 783.99, 1046.5], 0.35, "triangle", 0.2);
     setTimeout(() => {
-        playTone(880, 0.18);
+        playChord([783.99, 987.77, 1174.66], 0.4, "triangle", 0.18);
         goTo("greeting");
     }, 420);
 }
@@ -189,7 +206,7 @@ function renderGift() {
 
     // heart burst ambient
     spawnHeart(); spawnHeart();
-    playTone(m.notes[giftIdx % m.notes.length], 0.18, "triangle", 0.09);
+    playTone(m.notes[giftIdx % m.notes.length], 0.35, "triangle", 0.2);
 }
 
 $("#gift-next").addEventListener("click", () => {
@@ -252,16 +269,27 @@ function chaosThenEnd() {
     }, 1600);
 }
 
-// Proximity dodge on desktop
-function onPointerMoveFC(e) {
+// Proximity dodge on desktop — throttled via rAF to avoid layout thrash
+let fcLastX = 0, fcLastY = 0, fcFrameQueued = false;
+function fcCheck() {
+    fcFrameQueued = false;
     if (currentScene !== "feelingCheck") return;
     const r = noBtn.getBoundingClientRect();
-    const cx = r.left + r.width/2, cy = r.top + r.height/2;
-    const d = Math.hypot(e.clientX - cx, e.clientY - cy);
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const d = Math.hypot(fcLastX - cx, fcLastY - cy);
     if (d < Math.max(80, r.width * 0.9)) {
         fcNoAttempts++;
         if (fcNoAttempts >= 4) return chaosThenEnd();
         escapeNo();
+    }
+}
+function onPointerMoveFC(e) {
+    if (currentScene !== "feelingCheck") return;
+    fcLastX = e.clientX;
+    fcLastY = e.clientY;
+    if (!fcFrameQueued) {
+        fcFrameQueued = true;
+        requestAnimationFrame(fcCheck);
     }
 }
 addEventListener("pointermove", onPointerMoveFC, { passive: true });
@@ -279,30 +307,36 @@ noBtn.addEventListener("touchstart", (e) => {
     escapeNo();
 }, { passive: false });
 
-// ================== Floating hearts ==================
+// ================== Floating hearts + sparkles ==================
 const heartsBg = $("#hearts-bg");
-const heartGlyphs = ["♥", "♡", "❣", "🌸", "🌻"];
+const heartGlyphs = ["♥", "♡", "❣", "🌸", "🌻", "🎀", "💗", "✿"];
+const sparkleGlyphs = ["✨", "🌟", "💫", "⋆"];
 let heartTimer = null;
+// fewer particles on low-powered mobile
+const heartInterval = isTouch ? 600 : 400;
 
 function spawnHeart() {
     if (document.hidden) return;
+    const isSparkle = Math.random() < 0.28;
     const h = document.createElement("span");
-    h.className = "float-heart";
-    h.textContent = heartGlyphs[Math.floor(Math.random() * heartGlyphs.length)];
+    h.className = "float-heart" + (isSparkle ? " sparkle" : "");
+    const glyphs = isSparkle ? sparkleGlyphs : heartGlyphs;
+    h.textContent = glyphs[Math.floor(Math.random() * glyphs.length)];
     const size = 14 + Math.random() * 28;
     h.style.fontSize = size + "px";
     h.style.left = Math.random() * 100 + "vw";
     h.style.setProperty("--dx", (Math.random() * 120 - 60) + "px");
     const dur = 6 + Math.random() * 6;
     h.style.animationDuration = dur + "s";
-    h.style.opacity = 0.5 + Math.random() * 0.5;
+    h.style.opacity = 0.55 + Math.random() * 0.45;
     heartsBg.appendChild(h);
     setTimeout(() => h.remove(), dur * 1000 + 200);
 }
 function startHearts() {
     if (reduceMotion || heartTimer) return;
-    heartTimer = setInterval(spawnHeart, 400);
-    for (let i = 0; i < 8; i++) setTimeout(spawnHeart, i * 200);
+    heartTimer = setInterval(spawnHeart, heartInterval);
+    const initialCount = isTouch ? 5 : 8;
+    for (let i = 0; i < initialCount; i++) setTimeout(spawnHeart, i * 200);
 }
 function stopHearts() { if (heartTimer) { clearInterval(heartTimer); heartTimer = null; } }
 document.addEventListener("visibilitychange", () => { if (document.hidden) stopHearts(); else startHearts(); });
@@ -344,8 +378,8 @@ function spawnBurst(count) {
     }
     if (!running) { running = true; requestAnimationFrame(step); }
 }
-function launchConfetti() { if (!reduceMotion) spawnBurst(isTouch ? 150 : 220); }
-function smallConfetti(n) { if (!reduceMotion) spawnBurst(n); }
+function launchConfetti() { if (!reduceMotion) spawnBurst(isTouch ? 110 : 200); }
+function smallConfetti(n) { if (!reduceMotion) spawnBurst(isTouch ? Math.min(n, 70) : n); }
 
 function drawHeart(x,y,size,color,rot) {
     ctx.save(); ctx.translate(x,y); ctx.rotate(rot); ctx.fillStyle = color;
@@ -387,12 +421,16 @@ function step() {
 }
 
 // ================== WebAudio (tones + melody loop) ==================
-let audioCtx = null, muted = false, melodyTimer = null;
+let audioCtx = null, masterGain = null, muted = false, melodyTimer = null;
 
 function getAudio() {
     if (!audioCtx) {
-        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-        catch (e) { audioCtx = null; }
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.55;
+            masterGain.connect(audioCtx.destination);
+        } catch (e) { audioCtx = null; masterGain = null; }
     }
     return audioCtx;
 }
@@ -400,29 +438,41 @@ function resumeAudio() {
     const a = getAudio();
     if (a && a.state === "suspended") a.resume().catch(() => {});
 }
-function playTone(freq, dur=0.15, type="sine", vol=0.07) {
+// ADSR-shaped tone — no clicks, warmer, audible
+function playTone(freq, dur = 0.3, type = "triangle", vol = 0.22) {
     if (muted) return;
-    const a = getAudio(); if (!a) return;
+    const a = getAudio(); if (!a || !masterGain) return;
     resumeAudio();
     try {
+        const now = a.currentTime;
         const osc = a.createOscillator();
         const gain = a.createGain();
         osc.type = type;
         osc.frequency.value = freq;
-        gain.gain.value = vol;
-        osc.connect(gain).connect(a.destination);
-        osc.start();
-        gain.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur);
-        osc.stop(a.currentTime + dur + 0.02);
+        // Soft attack/decay/release
+        const attack = 0.012;
+        const release = Math.min(0.18, dur * 0.5);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(vol, now + attack);
+        gain.gain.setValueAtTime(vol, now + dur - release);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        osc.connect(gain).connect(masterGain);
+        osc.start(now);
+        osc.stop(now + dur + 0.03);
     } catch (e) {}
 }
-function playMelody(notes, tempo=0.3, loop=true) {
+// Two-layer tone — fundamental + soft octave/fifth for a plusher sound
+function playChord(freqs, dur = 0.45, type = "triangle", vol = 0.18) {
+    if (muted) return;
+    freqs.forEach((f, i) => setTimeout(() => playTone(f, dur, type, vol), i * 35));
+}
+function playMelody(notes, tempo = 0.3, loop = true) {
     stopMelody();
     let i = 0;
     const tick = () => {
         if (muted) return;
         const n = notes[i % notes.length];
-        if (n) playTone(n, tempo * 0.85, "triangle", 0.055);
+        if (n) playTone(n, tempo * 1.1, "triangle", 0.16);
         i++;
         if (!loop && i >= notes.length) { stopMelody(); return; }
     };
@@ -439,16 +489,27 @@ soundToggle.addEventListener("click", () => {
     soundToggle.classList.toggle("muted", muted);
     soundToggle.textContent = muted ? "♪̸" : "♪";
     resumeAudio();
-    if (muted) stopMelody();
+    if (muted) {
+        stopMelody();
+        if (masterGain) masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+    } else {
+        if (masterGain) masterGain.gain.setTargetAtTime(0.55, audioCtx.currentTime, 0.05);
+        // little confirmation ping
+        playChord([523.25, 659.25, 783.99], 0.3);
+    }
 });
 
-// unlock audio on first interaction (iOS)
+// unlock audio on first interaction (iOS / autoplay policies)
 const unlockOnce = () => {
     resumeAudio();
     removeEventListener("touchstart", unlockOnce);
+    removeEventListener("pointerdown", unlockOnce);
     removeEventListener("click", unlockOnce);
+    removeEventListener("keydown", unlockOnce);
 };
 addEventListener("touchstart", unlockOnce, { passive: true });
+addEventListener("pointerdown", unlockOnce, { passive: true });
 addEventListener("click", unlockOnce);
+addEventListener("keydown", unlockOnce);
 
 updateProgress("envelope");
