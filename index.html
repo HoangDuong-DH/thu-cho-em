@@ -37,6 +37,20 @@
     <div id="hearts-bg" aria-hidden="true"></div>
     <canvas id="confetti" aria-hidden="true"></canvas>
 
+    <!-- iOS media-session unlock: a silent looping audio element routes
+         WebAudio through the media channel (not the ringer), so tones play
+         even when the silent switch is on. Must be muted for autoplay. -->
+    <audio
+      id="media-unlock"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="auto"
+      src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAACAgICA"
+      aria-hidden="true"
+    ></audio>
+
     <button id="sound-toggle" aria-label="toggle music" title="music" type="button">♪</button>
     <div id="progress" aria-hidden="true"></div>
 

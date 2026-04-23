@@ -119,16 +119,16 @@ function goTo(scene) {
 
 function onSceneEnter(scene) {
     if (scene === "greeting") {
-        playChord([659.25, 783.99, 987.77], 0.35, "triangle", 0.17);
+        playChord([659.25, 783.99, 987.77], 0.35, "triangle", 0.38);
     }
     if (scene === "mood") {
         stopMelody();
-        playChord([523.25, 659.25, 783.99, 1046.5], 0.35, "triangle", 0.17);
+        playChord([523.25, 659.25, 783.99, 1046.5], 0.35, "triangle", 0.38);
     }
     if (scene === "feelingCheck") {
         fcNoAttempts = 0;
         resetNoBtn();
-        playChord([587.33, 740, 880], 0.32, "triangle", 0.15);
+        playChord([587.33, 740, 880], 0.32, "triangle", 0.36);
     }
     if (scene === "smug") {
         playMelody([523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5], 0.18, false);
@@ -156,9 +156,9 @@ function openEnvelope() {
     envelope.classList.add("opening");
     resumeAudio();
     // opening sparkle: a little rising arpeggio
-    playChord([523.25, 659.25, 783.99, 1046.5], 0.35, "triangle", 0.2);
+    playChord([523.25, 659.25, 783.99, 1046.5], 0.35, "triangle", 0.42);
     setTimeout(() => {
-        playChord([783.99, 987.77, 1174.66], 0.4, "triangle", 0.18);
+        playChord([783.99, 987.77, 1174.66], 0.4, "triangle", 0.4);
         goTo("greeting");
     }, 420);
 }
@@ -206,7 +206,7 @@ function renderGift() {
 
     // heart burst ambient
     spawnHeart(); spawnHeart();
-    playTone(m.notes[giftIdx % m.notes.length], 0.35, "triangle", 0.2);
+    playTone(m.notes[giftIdx % m.notes.length], 0.35, "triangle", 0.4);
 }
 
 $("#gift-next").addEventListener("click", () => {
@@ -422,13 +422,18 @@ function step() {
 
 // ================== WebAudio (tones + melody loop) ==================
 let audioCtx = null, masterGain = null, muted = false, melodyTimer = null;
+const MASTER_VOL = 0.9;
+
+// Silent looping <audio> element — keeps Safari in media-playback mode
+// so WebAudio routes through the media channel (bypasses iOS silent switch).
+const mediaUnlock = $("#media-unlock");
 
 function getAudio() {
     if (!audioCtx) {
         try {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             masterGain = audioCtx.createGain();
-            masterGain.gain.value = 0.55;
+            masterGain.gain.value = MASTER_VOL;
             masterGain.connect(audioCtx.destination);
         } catch (e) { audioCtx = null; masterGain = null; }
     }
@@ -437,34 +442,38 @@ function getAudio() {
 function resumeAudio() {
     const a = getAudio();
     if (a && a.state === "suspended") a.resume().catch(() => {});
+    // Also make sure the silent media element is playing (keeps iOS media session alive)
+    if (mediaUnlock && mediaUnlock.paused) mediaUnlock.play().catch(() => {});
 }
-// ADSR-shaped tone — no clicks, warmer, audible
-function playTone(freq, dur = 0.3, type = "triangle", vol = 0.22) {
+// Schedule a single tone at an absolute audio-context time
+function playToneAt(freq, startAt, dur = 0.35, type = "triangle", vol = 0.42) {
     if (muted) return;
     const a = getAudio(); if (!a || !masterGain) return;
-    resumeAudio();
     try {
-        const now = a.currentTime;
+        const start = startAt !== undefined ? startAt : a.currentTime;
         const osc = a.createOscillator();
         const gain = a.createGain();
         osc.type = type;
-        osc.frequency.value = freq;
-        // Soft attack/decay/release
-        const attack = 0.012;
+        osc.frequency.setValueAtTime(freq, start);
+        const attack = 0.015;
         const release = Math.min(0.18, dur * 0.5);
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(vol, now + attack);
-        gain.gain.setValueAtTime(vol, now + dur - release);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(vol, start + attack);
+        gain.gain.setValueAtTime(vol, Math.max(start + attack, start + dur - release));
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
         osc.connect(gain).connect(masterGain);
-        osc.start(now);
-        osc.stop(now + dur + 0.03);
+        osc.start(start);
+        osc.stop(start + dur + 0.03);
     } catch (e) {}
 }
-// Two-layer tone — fundamental + soft octave/fifth for a plusher sound
-function playChord(freqs, dur = 0.45, type = "triangle", vol = 0.18) {
+function playTone(freq, dur, type, vol) { playToneAt(freq, undefined, dur, type, vol); }
+// Arpeggio — notes scheduled via AudioContext timeline (not setTimeout) for rock-solid timing on iOS
+function playChord(freqs, dur = 0.4, type = "triangle", vol = 0.38, spacing = 0.045) {
     if (muted) return;
-    freqs.forEach((f, i) => setTimeout(() => playTone(f, dur, type, vol), i * 35));
+    const a = getAudio(); if (!a) return;
+    resumeAudio();
+    const base = a.currentTime + 0.01;
+    freqs.forEach((f, i) => playToneAt(f, base + i * spacing, dur, type, vol));
 }
 function playMelody(notes, tempo = 0.3, loop = true) {
     stopMelody();
@@ -472,7 +481,7 @@ function playMelody(notes, tempo = 0.3, loop = true) {
     const tick = () => {
         if (muted) return;
         const n = notes[i % notes.length];
-        if (n) playTone(n, tempo * 1.1, "triangle", 0.16);
+        if (n) playTone(n, tempo * 1.1, "triangle", 0.32);
         i++;
         if (!loop && i >= notes.length) { stopMelody(); return; }
     };
@@ -493,15 +502,30 @@ soundToggle.addEventListener("click", () => {
         stopMelody();
         if (masterGain) masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
     } else {
-        if (masterGain) masterGain.gain.setTargetAtTime(0.55, audioCtx.currentTime, 0.05);
-        // little confirmation ping
-        playChord([523.25, 659.25, 783.99], 0.3);
+        if (masterGain) masterGain.gain.setTargetAtTime(MASTER_VOL, audioCtx.currentTime, 0.05);
+        // confirmation ping — confirms audio is really flowing
+        playChord([523.25, 659.25, 783.99], 0.32);
     }
 });
 
-// unlock audio on first interaction (iOS / autoplay policies)
+// Unlock audio + media session on first interaction (iOS / autoplay policies)
+// Also plays a silent 1-sample buffer — the classic iOS WebAudio unlock.
 const unlockOnce = () => {
-    resumeAudio();
+    const a = getAudio();
+    if (a) {
+        try {
+            const buf = a.createBuffer(1, 1, 22050);
+            const src = a.createBufferSource();
+            src.buffer = buf;
+            src.connect(a.destination);
+            src.start(0);
+        } catch (e) {}
+        if (a.state === "suspended") a.resume().catch(() => {});
+    }
+    if (mediaUnlock) {
+        mediaUnlock.muted = true;
+        mediaUnlock.play().catch(() => {});
+    }
     removeEventListener("touchstart", unlockOnce);
     removeEventListener("pointerdown", unlockOnce);
     removeEventListener("click", unlockOnce);
