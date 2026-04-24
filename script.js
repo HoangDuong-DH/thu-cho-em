@@ -125,6 +125,11 @@ function goTo(scene) {
 }
 
 function onSceneEnter(scene) {
+    // Pause the ambient hearts during quiet scenes like the match minigame,
+    // resume them anywhere else.
+    if (HEART_QUIET_SCENES.has(scene)) stopHearts();
+    else startHearts();
+
     // Piano-ish 2-note accents sit gently under the mood song.
     // No continuous layers — the real audio track is the background.
     if (scene === "greeting") {
@@ -136,7 +141,10 @@ function onSceneEnter(scene) {
     if (scene === "feelingCheck") {
         fcNoAttempts = 0;
         resetNoBtn();
+        attachFcPointer();
         playChord([587.33, 880], 1.0, "sine", 0.13);
+    } else {
+        detachFcPointer();
     }
     if (scene === "smug") {
         playChord([659.25, 987.77], 1.1, "sine", 0.14);
@@ -305,7 +313,20 @@ function onPointerMoveFC(e) {
         requestAnimationFrame(fcCheck);
     }
 }
-addEventListener("pointermove", onPointerMoveFC, { passive: true });
+// Only listen for pointer moves while the feelingCheck scene is active.
+// A global pointermove listener fires on every mouse move across the app —
+// cheap per event, but pointless dispatch when the dodge logic can't run.
+let fcPointerAttached = false;
+function attachFcPointer() {
+    if (fcPointerAttached) return;
+    fcPointerAttached = true;
+    addEventListener("pointermove", onPointerMoveFC, { passive: true });
+}
+function detachFcPointer() {
+    if (!fcPointerAttached) return;
+    fcPointerAttached = false;
+    removeEventListener("pointermove", onPointerMoveFC);
+}
 
 noBtn.addEventListener("click", (e) => {
     e.preventDefault();
@@ -425,8 +446,12 @@ const heartsBg = $("#hearts-bg");
 const heartGlyphs = ["♥", "♡", "❣", "🌸", "🌻", "🎀", "💗", "✿"];
 const sparkleGlyphs = ["✨", "🌟", "💫", "⋆"];
 let heartTimer = null;
-// fewer particles on low-powered mobile
-const heartInterval = isTouch ? 600 : 400;
+// Further throttled on touch; each heart is a composite-layer-worthy element
+// with a long animation, so a slow drip is gentler on mobile GPUs.
+const heartInterval = isTouch ? 900 : 500;
+// Scenes that disable the ambient hearts — game scenes should stay quiet so
+// nothing competes with flip animations or images.
+const HEART_QUIET_SCENES = new Set(["match"]);
 
 function spawnHeart() {
     if (document.hidden) return;
@@ -447,9 +472,10 @@ function spawnHeart() {
 }
 function startHearts() {
     if (reduceMotion || heartTimer) return;
+    if (HEART_QUIET_SCENES.has(currentScene)) return;
     heartTimer = setInterval(spawnHeart, heartInterval);
-    const initialCount = isTouch ? 5 : 8;
-    for (let i = 0; i < initialCount; i++) setTimeout(spawnHeart, i * 200);
+    const initialCount = isTouch ? 3 : 6;
+    for (let i = 0; i < initialCount; i++) setTimeout(spawnHeart, i * 220);
 }
 function stopHearts() { if (heartTimer) { clearInterval(heartTimer); heartTimer = null; } }
 document.addEventListener("visibilitychange", () => { if (document.hidden) stopHearts(); else startHearts(); });
@@ -491,8 +517,8 @@ function spawnBurst(count) {
     }
     if (!running) { running = true; requestAnimationFrame(step); }
 }
-function launchConfetti() { if (!reduceMotion) spawnBurst(isTouch ? 110 : 200); }
-function smallConfetti(n) { if (!reduceMotion) spawnBurst(isTouch ? Math.min(n, 70) : n); }
+function launchConfetti() { if (!reduceMotion) spawnBurst(isTouch ? 70 : 160); }
+function smallConfetti(n) { if (!reduceMotion) spawnBurst(isTouch ? Math.min(n, 50) : n); }
 
 function drawHeart(x,y,size,color,rot) {
     ctx.save(); ctx.translate(x,y); ctx.rotate(rot); ctx.fillStyle = color;

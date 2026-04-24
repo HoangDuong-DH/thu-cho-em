@@ -126,10 +126,11 @@ img { -webkit-user-drag: none; pointer-events: none; }
     color: var(--rose-400);
     opacity: 0.7;
     animation: floatUp linear forwards;
-    filter: drop-shadow(0 2px 4px rgba(239, 111, 147, 0.28));
+    /* text-shadow is cheaper than filter: drop-shadow — no extra composite layer per heart */
+    text-shadow: 0 2px 4px rgba(239, 111, 147, 0.28);
     will-change: transform, opacity;
 }
-.float-heart.sparkle { filter: drop-shadow(0 0 6px rgba(255, 220, 120, 0.6)); }
+.float-heart.sparkle { text-shadow: 0 0 6px rgba(255, 220, 120, 0.6); }
 @keyframes floatUp {
     0%   { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
     10%  { opacity: 0.8; }
@@ -160,6 +161,16 @@ img { -webkit-user-drag: none; pointer-events: none; }
     transform: translateY(12px) scale(0.98);
     pointer-events: none;
     transition: opacity 0.32s ease, transform 0.32s var(--ease-spring);
+}
+/* Pause infinite animations (h1 wiggle, seal pulse, love glow, sun spin)
+   on scenes that aren't currently visible — inert scenes were still burning
+   CPU every frame. Crossfade between scenes still uses opacity transition,
+   so the scene entering gets its animations resumed as soon as .active toggles. */
+.scene:not(.active) *,
+.scene:not(.active) *::before,
+.scene:not(.active) *::after {
+    animation-play-state: paused !important;
+}
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 }
