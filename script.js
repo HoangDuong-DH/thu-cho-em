@@ -125,30 +125,31 @@ function goTo(scene) {
 }
 
 function onSceneEnter(scene) {
+    // Short one-shot synth chords as UI chimes. No looping melody —
+    // the mood song (real audio) is the only continuous layer after mood pick,
+    // so stacking a synth loop on top makes the mix muddy.
     if (scene === "greeting") {
-        playChord([659.25, 783.99, 987.77], 0.35, "triangle", 0.38);
+        playChord([659.25, 783.99, 987.77], 0.35, "triangle", 0.32);
     }
     if (scene === "mood") {
-        stopMelody();
-        playChord([523.25, 659.25, 783.99, 1046.5], 0.35, "triangle", 0.38);
+        playChord([523.25, 659.25, 783.99, 1046.5], 0.35, "triangle", 0.32);
     }
     if (scene === "feelingCheck") {
         fcNoAttempts = 0;
         resetNoBtn();
-        playChord([587.33, 740, 880], 0.32, "triangle", 0.36);
+        playChord([587.33, 740, 880], 0.32, "triangle", 0.30);
     }
     if (scene === "smug") {
-        playMelody([523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5], 0.18, false);
-        playSfx("chime", 0.55);
+        playChord([523.25, 659.25, 783.99, 1046.5], 0.28, "triangle", 0.32);
         setTimeout(() => smallConfetti(80), 200);
     }
     if (scene === "reminders") {
-        playMelody([523.25, 587.33, 659.25, 783.99, 659.25, 523.25], 0.28, false);
+        playChord([523.25, 659.25, 783.99], 0.32, "triangle", 0.30);
     }
     if (scene === "love") {
         launchConfetti();
-        playMelody([523.25, 659.25, 783.99, 1046.5, 987.77, 783.99, 659.25, 523.25], 0.28, true);
-        playSfx("chime", 0.7);
+        // Single finale accent over the mood song — low volume so it layers gently.
+        playSfx("chime", 0.35);
     }
 }
 
@@ -165,11 +166,10 @@ function openEnvelope() {
     envelope.classList.add("opening");
     resumeAudio();
     primeMediaElements();
-    // opening sparkle: a little rising arpeggio + real chime layer
-    playChord([523.25, 659.25, 783.99, 1046.5], 0.35, "triangle", 0.42);
-    playSfx("envelope", 0.65);
+    // opening sparkle — two arpeggios, spaced so they don't overlap.
+    playChord([523.25, 659.25, 783.99, 1046.5], 0.32, "triangle", 0.36);
     setTimeout(() => {
-        playChord([783.99, 987.77, 1174.66], 0.4, "triangle", 0.4);
+        playChord([783.99, 987.77, 1174.66], 0.38, "triangle", 0.34);
         goTo("greeting");
     }, 420);
 }
@@ -188,7 +188,6 @@ $$(".mood-btn").forEach(btn => btn.addEventListener("click", () => {
     const m = MOODS[currentMood];
     document.documentElement.style.setProperty("--pink-4", m.color);
     stopMelody();
-    playMelody(m.notes, m.tempo, true);
     playSong(m.song);
     goTo("gift");
     renderGift();
@@ -216,10 +215,9 @@ function renderGift() {
     const next = $("#gift-next");
     next.textContent = (giftIdx < m.slides.length - 1) ? "Tiếp ♥" : "Anh hỏi bé xíu →";
 
-    // heart burst ambient
+    // heart burst ambient — single soft tone so it doesn't fight the song.
     spawnHeart(); spawnHeart();
-    playTone(m.notes[giftIdx % m.notes.length], 0.35, "triangle", 0.4);
-    playSfx("pop", 0.35);
+    playTone(m.notes[giftIdx % m.notes.length], 0.32, "triangle", 0.28);
 }
 
 $("#gift-next").addEventListener("click", () => {
@@ -519,7 +517,7 @@ const SFX = {
     chime:    $("#sfx-chime"),
     click:    $("#sfx-click"),
 };
-const SONG_VOL = 0.6;
+const SONG_VOL = 0.5;
 let currentSongId = null;
 let sfxReady = false;
 
