@@ -20,6 +20,8 @@ const MIME = {
   ".webp": "image/webp",
   ".mp3": "audio/mpeg",
   ".wav": "audio/wav",
+  ".m4a": "audio/mp4",
+  ".mp4": "video/mp4",
 };
 
 const SECURITY_HEADERS = {

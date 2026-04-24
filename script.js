@@ -17,11 +17,14 @@ addEventListener("dblclick", (e) => {
 });
 
 // ================== Mood data ==================
-// Each mood has a carousel of slides + music pattern
+// Each mood has a carousel of slides + a background song + synth melody.
+// Song mapping: upbeat moods → "anh-biet", comfort moods → "vuong".
+// Swap the `song` field to rebalance without touching the player.
 const MOODS = {
     happy: {
         color: "#ff8fb0",
         tempo: 0.26,
+        song: "anh-biet",
         notes: [523.25, 659.25, 783.99, 1046.5, 987.77, 1046.5, 783.99, 659.25],
         slides: [
             { img: "hi-paw.jpg",       title: "Vui ghê đó",             text: "Giữ lấy cảm giác này đi. Không phải ngày nào cũng có đâu nha." },
@@ -32,6 +35,7 @@ const MOODS = {
     excited: {
         color: "#ef6f93",
         tempo: 0.2,
+        song: "anh-biet",
         notes: [659.25, 783.99, 987.77, 1174.66, 1318.51, 1174.66, 987.77, 783.99],
         slides: [
             { img: "cat_dance.gif",    title: "Năng lượng xịn ghê",     text: "Thấy em vậy là anh cũng lây theo luôn rồi." },
@@ -42,6 +46,7 @@ const MOODS = {
     normal: {
         color: "#ff8fb0",
         tempo: 0.34,
+        song: "anh-biet",
         notes: [523.25, 587.33, 659.25, 783.99, 880, 783.99, 659.25, 587.33],
         slides: [
             { img: "bleh.jpg",         title: "Bình thường cũng đáng",  text: "Không phải ngày nào cũng cần rực rỡ đâu em. Vậy là ổn rồi." },
@@ -52,6 +57,7 @@ const MOODS = {
     sad: {
         color: "#c994c4",
         tempo: 0.44,
+        song: "vuong",
         notes: [440, 392, 349.23, 329.63, 349.23, 392, 440, 493.88],
         slides: [
             { img: "hug.jpg",          title: "Lại đây anh ôm cái",     text: "Buồn một chút cũng không sao đâu. Không phải lỗi của em." },
@@ -62,6 +68,7 @@ const MOODS = {
     tired: {
         color: "#b39bd8",
         tempo: 0.5,
+        song: "vuong",
         notes: [523.25, 493.88, 440, 392, 440, 493.88, 523.25, 587.33],
         slides: [
             { img: "hug.jpg",          title: "Nghỉ đi em",             text: "Mệt thì dừng lại thôi. Em không cần giải thích với ai cả." },
@@ -132,6 +139,7 @@ function onSceneEnter(scene) {
     }
     if (scene === "smug") {
         playMelody([523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5], 0.18, false);
+        playSfx("chime", 0.55);
         setTimeout(() => smallConfetti(80), 200);
     }
     if (scene === "reminders") {
@@ -140,6 +148,7 @@ function onSceneEnter(scene) {
     if (scene === "love") {
         launchConfetti();
         playMelody([523.25, 659.25, 783.99, 1046.5, 987.77, 783.99, 659.25, 523.25], 0.28, true);
+        playSfx("chime", 0.7);
     }
 }
 
@@ -155,8 +164,10 @@ function openEnvelope() {
     if (envelope.classList.contains("opening")) return;
     envelope.classList.add("opening");
     resumeAudio();
-    // opening sparkle: a little rising arpeggio
+    primeMediaElements();
+    // opening sparkle: a little rising arpeggio + real chime layer
     playChord([523.25, 659.25, 783.99, 1046.5], 0.35, "triangle", 0.42);
+    playSfx("envelope", 0.65);
     setTimeout(() => {
         playChord([783.99, 987.77, 1174.66], 0.4, "triangle", 0.4);
         goTo("greeting");
@@ -178,6 +189,7 @@ $$(".mood-btn").forEach(btn => btn.addEventListener("click", () => {
     document.documentElement.style.setProperty("--pink-4", m.color);
     stopMelody();
     playMelody(m.notes, m.tempo, true);
+    playSong(m.song);
     goTo("gift");
     renderGift();
 }));
@@ -207,6 +219,7 @@ function renderGift() {
     // heart burst ambient
     spawnHeart(); spawnHeart();
     playTone(m.notes[giftIdx % m.notes.length], 0.35, "triangle", 0.4);
+    playSfx("pop", 0.35);
 }
 
 $("#gift-next").addEventListener("click", () => {
@@ -492,17 +505,110 @@ function stopMelody() {
     if (melodyTimer) { clearInterval(melodyTimer); melodyTimer = null; }
 }
 
+// ================== Songs + SFX (HTMLAudioElement layer) ==================
+// WebAudio handles chimes/arpeggios; real audio files handle music and
+// richer SFX. Kept separate from WebAudio because HTMLAudioElement is more
+// reliable for long mp3/m4a playback on iOS and survives tab backgrounding.
+const SONGS = {
+    "anh-biet": $("#song-anh-biet"),
+    "vuong":    $("#song-vuong"),
+};
+const SFX = {
+    envelope: $("#sfx-envelope"),
+    pop:      $("#sfx-pop"),
+    chime:    $("#sfx-chime"),
+    click:    $("#sfx-click"),
+};
+const SONG_VOL = 0.6;
+let currentSongId = null;
+let sfxReady = false;
+
+// Smooth volume ramp for <audio> — ~16 fps, plenty for fades.
+function fadeAudio(el, target, duration, onDone) {
+    if (el._fadeTimer) { clearInterval(el._fadeTimer); el._fadeTimer = null; }
+    const start = el.volume;
+    const t0 = performance.now();
+    el._fadeTimer = setInterval(() => {
+        const t = Math.min(1, (performance.now() - t0) / duration);
+        el.volume = Math.max(0, Math.min(1, start + (target - start) * t));
+        if (t >= 1) {
+            clearInterval(el._fadeTimer); el._fadeTimer = null;
+            if (onDone) onDone();
+        }
+    }, 60);
+}
+
+function playSong(id) {
+    const next = SONGS[id];
+    if (!next) return;
+    currentSongId = id;
+    // Fade out any other song that's currently playing.
+    for (const [k, el] of Object.entries(SONGS)) {
+        if (k !== id && !el.paused) {
+            fadeAudio(el, 0, 600, () => { el.pause(); el.currentTime = 0; });
+        }
+    }
+    if (muted) return;
+    if (next.paused) {
+        next.volume = 0;
+        const p = next.play();
+        if (p && p.catch) p.catch(() => {}); // iOS may reject outside gesture
+    }
+    fadeAudio(next, SONG_VOL, 1000);
+}
+
+function stopAllSongs() {
+    for (const el of Object.values(SONGS)) {
+        if (!el.paused) fadeAudio(el, 0, 400, () => { el.pause(); el.currentTime = 0; });
+    }
+}
+
+// SFX: rewind-on-replay so rapid triggers don't queue up.
+function playSfx(name, vol = 0.7) {
+    if (muted) return;
+    const el = SFX[name];
+    if (!el) return;
+    try {
+        el.currentTime = 0;
+        el.volume = vol;
+        const p = el.play();
+        if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
+}
+
+// iOS requires each <audio> to be "unlocked" inside a user gesture before
+// later programmatic play() works. Trigger a silent play/pause on each one.
+function primeMediaElements() {
+    if (sfxReady) return;
+    sfxReady = true;
+    const els = [...Object.values(SFX), ...Object.values(SONGS)];
+    for (const el of els) {
+        try {
+            el.volume = 0;
+            const p = el.play();
+            if (p && p.then) {
+                p.then(() => { el.pause(); el.currentTime = 0; })
+                 .catch(() => {}); // ignored — toggle/next gesture will retry
+            }
+        } catch (e) {}
+    }
+}
+
 const soundToggle = $("#sound-toggle");
 soundToggle.addEventListener("click", () => {
     muted = !muted;
     soundToggle.classList.toggle("muted", muted);
     soundToggle.textContent = muted ? "♪̸" : "♪";
     resumeAudio();
+    primeMediaElements();
     if (muted) {
         stopMelody();
+        stopAllSongs();
         if (masterGain) masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
     } else {
         if (masterGain) masterGain.gain.setTargetAtTime(MASTER_VOL, audioCtx.currentTime, 0.05);
+        // Resume the mood song if one was picked before mute.
+        if (currentSongId) playSong(currentSongId);
         // confirmation ping — confirms audio is really flowing
         playChord([523.25, 659.25, 783.99], 0.32);
     }
@@ -526,6 +632,8 @@ const unlockOnce = () => {
         mediaUnlock.muted = true;
         mediaUnlock.play().catch(() => {});
     }
+    // Unlock every <audio> element while we're still inside the user gesture.
+    primeMediaElements();
     removeEventListener("touchstart", unlockOnce);
     removeEventListener("pointerdown", unlockOnce);
     removeEventListener("click", unlockOnce);

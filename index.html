@@ -51,6 +51,17 @@
       aria-hidden="true"
     ></audio>
 
+    <!-- Mood songs. preload=none so iOS doesn't fetch both upfront;
+         JS primes them after first user gesture. -->
+    <audio id="song-anh-biet" loop playsinline preload="none" src="music/anh-biet.m4a" aria-hidden="true"></audio>
+    <audio id="song-vuong"    loop playsinline preload="none" src="music/vuong.m4a"    aria-hidden="true"></audio>
+
+    <!-- SFX. Small files, preload=auto so clicks respond immediately on iOS. -->
+    <audio id="sfx-envelope" playsinline preload="auto" src="sfx/envelope.mp3" aria-hidden="true"></audio>
+    <audio id="sfx-pop"      playsinline preload="auto" src="sfx/pop.mp3"      aria-hidden="true"></audio>
+    <audio id="sfx-chime"    playsinline preload="auto" src="sfx/chime.mp3"    aria-hidden="true"></audio>
+    <audio id="sfx-click"    playsinline preload="auto" src="sfx/click.mp3"    aria-hidden="true"></audio>
+
     <button id="sound-toggle" aria-label="toggle music" title="music" type="button">♪</button>
     <div id="progress" aria-hidden="true"></div>
 

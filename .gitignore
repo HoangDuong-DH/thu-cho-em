@@ -12,3 +12,6 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.swp
+
+# Large video sources (audio already extracted to /music)
+*.mp4
