@@ -178,7 +178,11 @@ function openEnvelope() {
     if (envelope.classList.contains("opening")) return;
     envelope.classList.add("opening");
     resumeAudio();
-    primeMediaElements();
+    // Prime SFX + the inactive song so iOS unlocks them, then play the
+    // default song directly inside this gesture so it's unlocked too —
+    // music now starts from the envelope instead of waiting for mood pick.
+    primeMediaElements(DEFAULT_SONG);
+    playSong(DEFAULT_SONG);
     // Gentle opening arpeggio — 3 soft piano notes rising.
     playChord([523.25, 783.99, 1046.5], 1.2, "sine", 0.17, 0.1);
     setTimeout(() => goTo("greeting"), 420);
@@ -591,6 +595,10 @@ function resumeAudio() {
 function playToneAt(freq, startAt, dur = 1.1, type = "sine", vol = 0.18) {
     if (muted) return;
     const a = getAudio(); if (!a || !masterGain) return;
+    // iOS Safari: scheduling oscillators while the context is suspended
+    // freezes the event timeline, so tones intermittently drop. Bail out —
+    // the caller (playChord/playTone) will re-invoke us once resume lands.
+    if (a.state === "suspended") return;
     try {
         const start = startAt !== undefined ? startAt : a.currentTime + 0.005;
         const end = start + dur;
@@ -620,14 +628,26 @@ function playToneAt(freq, startAt, dur = 1.1, type = "sine", vol = 0.18) {
         }
     } catch (e) {}
 }
-function playTone(freq, dur, type, vol) { playToneAt(freq, undefined, dur, type, vol); }
+function playTone(freq, dur, type, vol) {
+    if (muted) return;
+    const a = getAudio(); if (!a) return;
+    const sched = () => { if (!muted) playToneAt(freq, undefined, dur, type, vol); };
+    if (a.state === "suspended") a.resume().then(sched).catch(() => {});
+    else sched();
+}
 // Soft arpeggio, notes timed on the audio-context clock for iOS reliability.
+// Wait for resume() on suspended contexts — otherwise the scheduled events
+// land in a frozen timeline and silently drop on iOS.
 function playChord(freqs, dur = 1.0, type = "sine", vol = 0.16, spacing = 0.08) {
     if (muted) return;
     const a = getAudio(); if (!a) return;
-    resumeAudio();
-    const base = a.currentTime + 0.01;
-    freqs.forEach((f, i) => playToneAt(f, base + i * spacing, dur, type, vol));
+    const sched = () => {
+        if (muted) return;
+        const base = a.currentTime + 0.01;
+        freqs.forEach((f, i) => playToneAt(f, base + i * spacing, dur, type, vol));
+    };
+    if (a.state === "suspended") a.resume().then(sched).catch(() => {});
+    else sched();
 }
 function playMelody(notes, tempo = 0.3, loop = true) {
     stopMelody();
@@ -661,6 +681,8 @@ const SFX = {
     click:    $("#sfx-click"),
 };
 const SONG_VOL = 0.5;
+// Song that plays from the envelope onwards until the user picks a mood.
+const DEFAULT_SONG = "anh-biet";
 let currentSongId = null;
 let sfxReady = false;
 
@@ -725,10 +747,16 @@ function playSfx(name, vol = 0.7) {
 
 // iOS requires each <audio> to be "unlocked" inside a user gesture before
 // later programmatic play() works. Trigger a silent play/pause on each one.
-function primeMediaElements() {
+// If `keepSongId` is provided, that song is skipped — the caller is about
+// to play it directly in the same gesture, and the deferred pause() from
+// priming would otherwise race the caller's play() and silence the track.
+function primeMediaElements(keepSongId) {
     if (sfxReady) return;
     sfxReady = true;
-    const els = [...Object.values(SFX), ...Object.values(SONGS)];
+    const els = Object.values(SFX).slice();
+    for (const [id, el] of Object.entries(SONGS)) {
+        if (id !== keepSongId) els.push(el);
+    }
     for (const el of els) {
         try {
             el.volume = 0;
