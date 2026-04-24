@@ -1,3 +1,7 @@
+// ================== App Version ==================
+const APP_VERSION = "audio-enhanced-v4";
+console.log("App version:", APP_VERSION);
+
 // ================== Utilities ==================
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
@@ -17,6 +21,77 @@ addEventListener("gesturestart", (e) => e.preventDefault());
 addEventListener("dblclick", (e) => {
     if (e.target.closest("button, #envelope-container")) e.preventDefault();
 });
+
+// ================== Dynamic UI Enhancements ==================
+function createMusicStartButton() {
+    let btn = $("#music-start");
+
+    if (btn) return btn;
+
+    btn = document.createElement("button");
+    btn.id = "music-start";
+    btn.type = "button";
+    btn.textContent = "Bật nhạc ♪";
+    btn.className = "music-start hidden";
+
+    btn.style.position = "fixed";
+    btn.style.right = "16px";
+    btn.style.bottom = "16px";
+    btn.style.zIndex = "9999";
+    btn.style.border = "none";
+    btn.style.borderRadius = "999px";
+    btn.style.padding = "10px 14px";
+    btn.style.background = "rgba(255, 143, 176, 0.94)";
+    btn.style.color = "#fff";
+    btn.style.fontWeight = "700";
+    btn.style.fontSize = "14px";
+    btn.style.boxShadow = "0 8px 24px rgba(0,0,0,0.18)";
+    btn.style.backdropFilter = "blur(8px)";
+    btn.style.cursor = "pointer";
+    btn.style.display = "none";
+
+    document.body.appendChild(btn);
+
+    return btn;
+}
+
+function createVersionBadge() {
+    let badge = $("#app-version");
+
+    if (badge) return badge;
+
+    badge = document.createElement("div");
+    badge.id = "app-version";
+    badge.textContent = APP_VERSION;
+
+    badge.style.position = "fixed";
+    badge.style.left = "8px";
+    badge.style.bottom = "8px";
+    badge.style.zIndex = "9999";
+    badge.style.fontSize = "10px";
+    badge.style.color = "rgba(0,0,0,0.32)";
+    badge.style.pointerEvents = "none";
+    badge.style.userSelect = "none";
+
+    document.body.appendChild(badge);
+
+    return badge;
+}
+
+const musicStartBtn = createMusicStartButton();
+createVersionBadge();
+
+function showMusicStartButton() {
+    if (!musicStartBtn) return;
+    musicStartBtn.classList.remove("hidden");
+    musicStartBtn.style.display = "block";
+}
+
+function hideMusicStartButton() {
+    if (!musicStartBtn) return;
+    musicStartBtn.classList.add("hidden");
+    musicStartBtn.style.display = "none";
+}
 
 // ================== Mood data ==================
 const MOODS = {
@@ -85,10 +160,17 @@ const PRELOAD = [
     "hug.jpg", "cat_heart.gif",
     "smug.jpg", "love-you.jpg",
 ];
-PRELOAD.forEach(src => {
-    const i = new Image();
-    i.src = src;
-});
+
+function preloadImages() {
+    PRELOAD.forEach(src => {
+        const i = new Image();
+        i.decoding = "async";
+        i.loading = "eager";
+        i.src = src;
+    });
+}
+
+preloadImages();
 
 // ================== Scene order ==================
 const SCENE_ORDER = [
@@ -105,11 +187,13 @@ const SCENE_ORDER = [
 
 const progressEl = $("#progress");
 
-SCENE_ORDER.slice(1).forEach(() => {
-    const d = document.createElement("div");
-    d.className = "p";
-    progressEl.appendChild(d);
-});
+if (progressEl) {
+    SCENE_ORDER.slice(1).forEach(() => {
+        const d = document.createElement("div");
+        d.className = "p";
+        progressEl.appendChild(d);
+    });
+}
 
 function updateProgress(scene) {
     const idx = SCENE_ORDER.indexOf(scene);
@@ -139,7 +223,8 @@ function goTo(scene) {
 
     if (!next) return;
 
-    cur.classList.remove("active");
+    if (cur) cur.classList.remove("active");
+
     next.scrollTop = 0;
 
     requestAnimationFrame(() => {
@@ -208,6 +293,7 @@ $$("[data-go]").forEach(b => {
     b.addEventListener("click", () => {
         resumeAudio();
         primeSfxElements();
+        playSfx("click", 0.35);
         goTo(b.dataset.go);
     });
 });
@@ -216,17 +302,19 @@ $$("[data-go]").forEach(b => {
 const envelope = $("#envelope-container");
 
 function openEnvelope() {
+    if (!envelope) return;
     if (envelope.classList.contains("opening")) return;
 
     envelope.classList.add("opening");
 
     resumeAudio();
     primeSfxElements();
+    preloadSongs();
 
     playSfx("envelope", 0.45);
 
-    // Quan trọng: phát nhạc thật trực tiếp trong gesture click.
-    // Không prime bài nhạc bằng play/pause nữa.
+    // Phát nhạc thật trực tiếp từ gesture click.
+    // Không play/pause nhạc nền để unlock nữa.
     playSong(DEFAULT_SONG);
 
     playChord([523.25, 783.99, 1046.5], 1.2, "sine", 0.17, 0.1);
@@ -234,14 +322,16 @@ function openEnvelope() {
     setTimeout(() => goTo("greeting"), 420);
 }
 
-envelope.addEventListener("click", openEnvelope);
+if (envelope) {
+    envelope.addEventListener("click", openEnvelope);
 
-envelope.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        openEnvelope();
-    }
-});
+    envelope.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openEnvelope();
+        }
+    });
+}
 
 // ================== Mood pick -> Gift ==================
 let currentMood = null;
@@ -251,11 +341,13 @@ $$(".mood-btn").forEach(btn => {
     btn.addEventListener("click", () => {
         resumeAudio();
         primeSfxElements();
+        preloadSongs();
 
         currentMood = btn.dataset.mood;
         giftIdx = 0;
 
         const m = MOODS[currentMood];
+        if (!m) return;
 
         document.documentElement.style.setProperty("--pink-4", m.color);
 
@@ -269,29 +361,41 @@ $$(".mood-btn").forEach(btn => {
 
 function renderGift() {
     const m = MOODS[currentMood];
+    if (!m) return;
+
     const slide = m.slides[giftIdx];
 
-    $("#gift-img").src = slide.img;
-    $("#gift-img").classList.remove("round");
+    const giftImg = $("#gift-img");
+    const giftTitle = $("#gift-title");
+    const giftText = $("#gift-text");
 
-    if (slide.img.endsWith(".gif") || slide.img === "hug.jpg") {
-        $("#gift-img").classList.add("round");
+    if (giftImg) {
+        giftImg.src = slide.img;
+        giftImg.classList.remove("round");
+
+        if (slide.img.endsWith(".gif") || slide.img === "hug.jpg") {
+            giftImg.classList.add("round");
+        }
     }
 
-    $("#gift-title").textContent = slide.title;
-    $("#gift-text").textContent = slide.text;
+    if (giftTitle) giftTitle.textContent = slide.title;
+    if (giftText) giftText.textContent = slide.text;
 
     const dots = $("#gift-dots");
-    dots.innerHTML = "";
+    if (dots) {
+        dots.innerHTML = "";
 
-    m.slides.forEach((_, i) => {
-        const d = document.createElement("div");
-        d.className = "dot" + (i === giftIdx ? " active" : "");
-        dots.appendChild(d);
-    });
+        m.slides.forEach((_, i) => {
+            const d = document.createElement("div");
+            d.className = "dot" + (i === giftIdx ? " active" : "");
+            dots.appendChild(d);
+        });
+    }
 
     const next = $("#gift-next");
-    next.textContent = giftIdx < m.slides.length - 1 ? "Tiếp ♥" : "Một câu hỏi nhỏ →";
+    if (next) {
+        next.textContent = giftIdx < m.slides.length - 1 ? "Tiếp ♥" : "Một câu hỏi nhỏ →";
+    }
 
     spawnHeart();
     spawnHeart();
@@ -299,18 +403,22 @@ function renderGift() {
     playTone(m.notes[giftIdx % m.notes.length], 0.9, "sine", 0.12);
 }
 
-$("#gift-next").addEventListener("click", () => {
-    resumeAudio();
+const giftNext = $("#gift-next");
+if (giftNext) {
+    giftNext.addEventListener("click", () => {
+        resumeAudio();
 
-    const m = MOODS[currentMood];
+        const m = MOODS[currentMood];
+        if (!m) return;
 
-    if (giftIdx < m.slides.length - 1) {
-        giftIdx++;
-        renderGift();
-    } else {
-        goTo("feelingCheck");
-    }
-});
+        if (giftIdx < m.slides.length - 1) {
+            giftIdx++;
+            renderGift();
+        } else {
+            goTo("feelingCheck");
+        }
+    });
+}
 
 // ================== Feeling check ==================
 const noBtn = $("#fc-no");
@@ -318,7 +426,7 @@ const fcTitle = $("#fc-title");
 
 let fcNoAttempts = 0;
 
-const noTexts = ["Chưa", "ờm", "vẫn chưa", "hmm", "chắc chưa"];
+const noTexts = ["Chưa", "Ờm", "Vẫn chưa", "Hmm", "Chắc chưa"];
 const noTitles = [
     "Thật hả?",
     "Thử tiếp chút nha",
@@ -327,16 +435,22 @@ const noTitles = [
 ];
 
 function resetNoBtn() {
+    if (!noBtn || !fcTitle) return;
+
     noBtn.style.position = "";
     noBtn.style.transform = "";
     noBtn.style.left = "";
     noBtn.style.top = "";
     noBtn.textContent = "Chưa";
+
     fcTitle.textContent = "Bạn thấy nhẹ hơn chưa?";
+
     document.body.classList.remove("chaos");
 }
 
 function escapeNo() {
+    if (!noBtn || !fcTitle) return;
+
     const rect = noBtn.getBoundingClientRect();
     const pad = 14;
 
@@ -365,7 +479,10 @@ function chaosThenEnd() {
     }
 
     smallConfetti(120);
-    fcTitle.textContent = "Rồi, biết rồi.";
+
+    if (fcTitle) {
+        fcTitle.textContent = "Rồi, biết rồi.";
+    }
 
     setTimeout(() => {
         document.body.classList.remove("chaos");
@@ -381,6 +498,7 @@ function fcCheck() {
     fcFrameQueued = false;
 
     if (currentScene !== "feelingCheck") return;
+    if (!noBtn) return;
 
     const r = noBtn.getBoundingClientRect();
     const cx = r.left + r.width / 2;
@@ -427,29 +545,31 @@ function detachFcPointer() {
     removeEventListener("pointermove", onPointerMoveFC);
 }
 
-noBtn.addEventListener("click", (e) => {
-    e.preventDefault();
+if (noBtn) {
+    noBtn.addEventListener("click", (e) => {
+        e.preventDefault();
 
-    fcNoAttempts++;
+        fcNoAttempts++;
 
-    if (fcNoAttempts >= 4) {
-        return chaosThenEnd();
-    }
+        if (fcNoAttempts >= 4) {
+            return chaosThenEnd();
+        }
 
-    escapeNo();
-});
+        escapeNo();
+    });
 
-noBtn.addEventListener("touchstart", (e) => {
-    e.preventDefault();
+    noBtn.addEventListener("touchstart", (e) => {
+        e.preventDefault();
 
-    fcNoAttempts++;
+        fcNoAttempts++;
 
-    if (fcNoAttempts >= 4) {
-        return chaosThenEnd();
-    }
+        if (fcNoAttempts >= 4) {
+            return chaosThenEnd();
+        }
 
-    escapeNo();
-}, { passive: false });
+        escapeNo();
+    }, { passive: false });
+}
 
 // ================== Memory match minigame ==================
 const MATCH_IMAGES = [
@@ -492,8 +612,11 @@ function initMatch() {
     const grid = $("#match-grid");
     const status = $("#match-status");
 
+    if (!grid) return;
+
     grid.innerHTML = "";
-    status.textContent = "";
+
+    if (status) status.textContent = "";
 
     matchState = {
         firstPick: null,
@@ -552,11 +675,18 @@ function flipMatchCard(card) {
         playTone(987.77, 0.7, "sine", 0.14);
 
         const praise = MATCH_PRAISES[matchState.matched - 1] || "Hay quá";
-        $("#match-status").textContent = `${praise} · ${matchState.matched}/${MATCH_IMAGES.length}`;
+        const status = $("#match-status");
+
+        if (status) {
+            status.textContent = `${praise} · ${matchState.matched}/${MATCH_IMAGES.length}`;
+        }
 
         if (matchState.matched === MATCH_IMAGES.length) {
             matchState.advancing = true;
-            $("#match-status").textContent = "Xong hết rồi.";
+
+            if (status) {
+                status.textContent = "Xong hết rồi.";
+            }
 
             setTimeout(() => smallConfetti(80), 200);
             playSfx("chime", 0.32);
@@ -582,10 +712,13 @@ const sparkleGlyphs = ["✨", "🌟", "💫", "⋆"];
 
 let heartTimer = null;
 
-const heartInterval = isTouch ? 900 : 500;
+const heartInterval = isTouch ? 950 : 560;
+const maxHearts = isTouch ? 18 : 34;
 
 function spawnHeart() {
     if (document.hidden || !heartsBg) return;
+
+    if (heartsBg.children.length >= maxHearts) return;
 
     const isSparkle = Math.random() < 0.28;
     const h = document.createElement("span");
@@ -593,7 +726,6 @@ function spawnHeart() {
     h.className = "float-heart" + (isSparkle ? " sparkle" : "");
 
     const glyphs = isSparkle ? sparkleGlyphs : heartGlyphs;
-
     h.textContent = glyphs[Math.floor(Math.random() * glyphs.length)];
 
     const size = 14 + Math.random() * 28;
@@ -616,10 +748,10 @@ function startHearts() {
 
     heartTimer = setInterval(spawnHeart, heartInterval);
 
-    const initialCount = isTouch ? 3 : 6;
+    const initialCount = isTouch ? 2 : 5;
 
     for (let i = 0; i < initialCount; i++) {
-        setTimeout(spawnHeart, i * 220);
+        setTimeout(spawnHeart, i * 240);
     }
 }
 
@@ -630,24 +762,18 @@ function stopHearts() {
     }
 }
 
-document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-        stopHearts();
-    } else {
-        startHearts();
-    }
-});
-
 startHearts();
 
 // ================== Confetti ==================
 const confettiCanvas = $("#confetti");
-const ctx = confettiCanvas.getContext("2d");
+const ctx = confettiCanvas ? confettiCanvas.getContext("2d") : null;
 
 let parts = [];
 let running = false;
 
 function resizeCanvas() {
+    if (!confettiCanvas || !ctx) return;
+
     const dpr = Math.min(devicePixelRatio || 1, 2);
 
     confettiCanvas.width = innerWidth * dpr;
@@ -663,6 +789,8 @@ addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
 function spawnBurst(count) {
+    if (!ctx) return;
+
     const colors = [
         "#ff5c8a",
         "#ff8fa3",
@@ -675,7 +803,9 @@ function spawnBurst(count) {
 
     const shapes = ["heart", "rect", "circle", "star"];
 
-    for (let i = 0; i < count; i++) {
+    const safeCount = isTouch ? Math.min(count, 55) : count;
+
+    for (let i = 0; i < safeCount; i++) {
         parts.push({
             x: innerWidth / 2 + (Math.random() - 0.5) * 200,
             y: innerHeight / 2 + (Math.random() - 0.5) * 80,
@@ -699,17 +829,19 @@ function spawnBurst(count) {
 
 function launchConfetti() {
     if (!reduceMotion) {
-        spawnBurst(isTouch ? 70 : 160);
+        spawnBurst(isTouch ? 65 : 150);
     }
 }
 
 function smallConfetti(n) {
     if (!reduceMotion) {
-        spawnBurst(isTouch ? Math.min(n, 50) : n);
+        spawnBurst(isTouch ? Math.min(n, 45) : n);
     }
 }
 
 function drawHeart(x, y, size, color, rot) {
+    if (!ctx) return;
+
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(rot);
@@ -730,6 +862,8 @@ function drawHeart(x, y, size, color, rot) {
 }
 
 function drawStar(x, y, size, color, rot) {
+    if (!ctx) return;
+
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(rot);
@@ -755,6 +889,11 @@ function drawStar(x, y, size, color, rot) {
 }
 
 function step() {
+    if (!ctx || !confettiCanvas) {
+        running = false;
+        return;
+    }
+
     ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
 
     for (const p of parts) {
@@ -795,8 +934,9 @@ function step() {
 // ================== WebAudio ==================
 let audioCtx = null;
 let masterGain = null;
-let muted = false;
 let melodyTimer = null;
+
+let muted = localStorage.getItem("lovePageMuted") === "true";
 
 const MASTER_VOL = 0.9;
 
@@ -808,7 +948,7 @@ function getAudio() {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
             masterGain = audioCtx.createGain();
-            masterGain.gain.value = MASTER_VOL;
+            masterGain.gain.value = muted ? 0 : MASTER_VOL;
             masterGain.connect(audioCtx.destination);
         } catch (e) {
             audioCtx = null;
@@ -971,6 +1111,7 @@ const DEFAULT_SONG = "anh-biet";
 
 let currentSongId = null;
 let sfxReady = false;
+let songPlayToken = 0;
 
 function prepareAudioElement(el) {
     if (!el) return;
@@ -984,7 +1125,37 @@ function prepareAudioElement(el) {
     } catch (e) {}
 }
 
-Object.values(SONGS).forEach(prepareAudioElement);
+function preloadSongs() {
+    Object.values(SONGS).forEach(prepareAudioElement);
+}
+
+preloadSongs();
+
+function validateAudioFiles() {
+    for (const [id, el] of Object.entries(SONGS)) {
+        if (!el) {
+            console.warn(`[AUDIO] Missing element for song: ${id}`);
+            continue;
+        }
+
+        if (!el.getAttribute("src")) {
+            console.warn(`[AUDIO] Missing src for song: ${id}`);
+        }
+    }
+
+    for (const [id, el] of Object.entries(SFX)) {
+        if (!el) {
+            console.warn(`[SFX] Missing element for sfx: ${id}`);
+            continue;
+        }
+
+        if (!el.getAttribute("src")) {
+            console.warn(`[SFX] Missing src for sfx: ${id}`);
+        }
+    }
+}
+
+validateAudioFiles();
 
 function fadeAudio(el, target, duration, onDone) {
     if (!el) return;
@@ -1007,11 +1178,9 @@ function fadeAudio(el, target, duration, onDone) {
             clearInterval(el._fadeTimer);
             el._fadeTimer = null;
 
-            if (onDone) {
-                onDone();
-            }
+            if (onDone) onDone();
         }
-    }, 60);
+    }, 50);
 }
 
 function stopOtherSongs(activeId) {
@@ -1020,8 +1189,10 @@ function stopOtherSongs(activeId) {
 
         if (!el.paused) {
             fadeAudio(el, 0, 500, () => {
-                el.pause();
-                el.currentTime = 0;
+                if (currentSongId !== k) {
+                    el.pause();
+                    el.currentTime = 0;
+                }
             });
         }
     }
@@ -1030,43 +1201,79 @@ function stopOtherSongs(activeId) {
 function playSong(id) {
     const next = SONGS[id];
 
-    if (!next || muted) return;
+    if (!next) {
+        console.warn("[AUDIO] Song not found:", id);
+        return;
+    }
+
+    currentSongId = id;
+
+    if (muted) return;
+
+    const token = ++songPlayToken;
 
     prepareAudioElement(next);
     stopOtherSongs(id);
 
     const startFade = () => {
+        if (token !== songPlayToken) return;
+
         currentSongId = id;
-        fadeAudio(next, SONG_VOL, 900);
+        hideMusicStartButton();
+        fadeAudio(next, SONG_VOL, 850);
     };
 
-    if (next.paused) {
-        next.volume = 0;
+    try {
+        if (next.paused) {
+            next.volume = 0;
 
-        const p = next.play();
+            const p = next.play();
 
-        if (p && p.then) {
-            p.then(startFade).catch((err) => {
-                console.warn("Song play rejected:", id, err);
-            });
+            if (p && p.then) {
+                p.then(startFade).catch((err) => {
+                    console.warn("[AUDIO] Song play rejected:", id, err);
+                    showMusicStartButton();
+                });
+            } else {
+                startFade();
+            }
         } else {
             startFade();
         }
-    } else {
-        startFade();
+    } catch (err) {
+        console.warn("[AUDIO] Song play error:", id, err);
+        showMusicStartButton();
     }
 }
 
 function stopAllSongs() {
+    songPlayToken++;
+
     for (const el of Object.values(SONGS)) {
         if (!el) continue;
 
         if (!el.paused) {
-            fadeAudio(el, 0, 350, () => {
+            fadeAudio(el, 0, 320, () => {
                 el.pause();
                 el.currentTime = 0;
             });
         }
+    }
+}
+
+function softenCurrentSong() {
+    const activeSong = SONGS[currentSongId];
+
+    if (activeSong && !activeSong.paused && !muted) {
+        fadeAudio(activeSong, 0.08, 500);
+    }
+}
+
+function restoreCurrentSong() {
+    const activeSong = SONGS[currentSongId];
+
+    if (activeSong && !activeSong.paused && !muted) {
+        fadeAudio(activeSong, SONG_VOL, 700);
     }
 }
 
@@ -1090,7 +1297,6 @@ function playSfx(name, vol = 0.7) {
 }
 
 // Chỉ unlock SFX, không unlock nhạc nền bằng play/pause.
-// Đây là điểm sửa chính để tránh nhạc bị pause ngẫu nhiên.
 function primeSfxElements() {
     if (sfxReady) return;
 
@@ -1115,29 +1321,11 @@ function primeSfxElements() {
     }
 }
 
-// ================== Sound toggle ==================
-const soundToggle = $("#sound-toggle");
-
-soundToggle.addEventListener("click", () => {
-    muted = !muted;
-
-    soundToggle.classList.toggle("muted", muted);
-    soundToggle.textContent = muted ? "♪̸" : "♪";
-
-    resumeAudio();
-    primeSfxElements();
-
-    if (muted) {
-        stopMelody();
-        stopAllSongs();
-
-        if (masterGain && audioCtx) {
-            masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
-        }
-    } else {
-        if (masterGain && audioCtx) {
-            masterGain.gain.setTargetAtTime(MASTER_VOL, audioCtx.currentTime, 0.05);
-        }
+// ================== Music Start Fallback Button ==================
+if (musicStartBtn) {
+    musicStartBtn.addEventListener("click", () => {
+        resumeAudio();
+        preloadSongs();
 
         if (currentSongId) {
             playSong(currentSongId);
@@ -1145,13 +1333,57 @@ soundToggle.addEventListener("click", () => {
             playSong(DEFAULT_SONG);
         }
 
-        playTone(783.99, 0.8, "sine", 0.12);
-    }
-});
+        hideMusicStartButton();
+    });
+}
+
+// ================== Sound toggle ==================
+const soundToggle = $("#sound-toggle");
+
+function syncSoundButton() {
+    if (!soundToggle) return;
+
+    soundToggle.classList.toggle("muted", muted);
+    soundToggle.textContent = muted ? "♪̸" : "♪";
+}
+
+syncSoundButton();
+
+if (soundToggle) {
+    soundToggle.addEventListener("click", () => {
+        muted = !muted;
+
+        localStorage.setItem("lovePageMuted", String(muted));
+
+        syncSoundButton();
+        resumeAudio();
+        primeSfxElements();
+
+        if (muted) {
+            hideMusicStartButton();
+            stopMelody();
+            stopAllSongs();
+
+            if (masterGain && audioCtx) {
+                masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+            }
+        } else {
+            if (masterGain && audioCtx) {
+                masterGain.gain.setTargetAtTime(MASTER_VOL, audioCtx.currentTime, 0.05);
+            }
+
+            if (currentSongId) {
+                playSong(currentSongId);
+            } else {
+                playSong(DEFAULT_SONG);
+            }
+
+            playTone(783.99, 0.8, "sine", 0.12);
+        }
+    });
+}
 
 // ================== Unlock audio on first interaction ==================
-// Không gọi prime nhạc nền ở đây.
-// Chỉ resume AudioContext và bật silent mediaUnlock nếu có.
 const unlockOnce = () => {
     const a = getAudio();
 
@@ -1176,6 +1408,7 @@ const unlockOnce = () => {
     }
 
     primeSfxElements();
+    preloadSongs();
 
     removeEventListener("touchstart", unlockOnce);
     removeEventListener("pointerdown", unlockOnce);
@@ -1188,8 +1421,18 @@ addEventListener("pointerdown", unlockOnce, { passive: true });
 addEventListener("click", unlockOnce);
 addEventListener("keydown", unlockOnce);
 
-// ================== Debug audio logs ==================
-// Có thể giữ trong lúc test. Khi ổn rồi thì xóa khối này.
+// ================== Visibility Handling ==================
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        stopHearts();
+        softenCurrentSong();
+    } else {
+        startHearts();
+        restoreCurrentSong();
+    }
+});
+
+// ================== Audio Debug Logs ==================
 for (const [id, el] of Object.entries(SONGS)) {
     if (!el) continue;
 
