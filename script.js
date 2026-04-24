@@ -148,6 +148,9 @@ function onSceneEnter(scene) {
     if (scene === "love") {
         launchConfetti();
         playSfx("chime", 0.3);
+        // Switch to the other song for the finale so every playthrough hears both.
+        const other = Object.keys(SONGS).find(k => k !== currentSongId);
+        if (other) playSong(other);
     }
 }
 
@@ -550,10 +553,16 @@ function playSong(id) {
     const next = SONGS[id];
     if (!next) return;
     currentSongId = id;
-    // Fade out any other song that's currently playing.
+    // Fade out any other song that's currently playing, and start prefetching
+    // songs we haven't touched yet so a later switch (e.g. to the finale song)
+    // doesn't stall on a cold 2 MB download.
     for (const [k, el] of Object.entries(SONGS)) {
-        if (k !== id && !el.paused) {
+        if (k === id) continue;
+        if (!el.paused) {
             fadeAudio(el, 0, 600, () => { el.pause(); el.currentTime = 0; });
+        } else if (el.readyState === 0) {
+            el.preload = "auto";
+            try { el.load(); } catch (e) {}
         }
     }
     if (muted) return;
