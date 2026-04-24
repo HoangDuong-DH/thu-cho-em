@@ -125,31 +125,29 @@ function goTo(scene) {
 }
 
 function onSceneEnter(scene) {
-    // Short one-shot synth chords as UI chimes. No looping melody —
-    // the mood song (real audio) is the only continuous layer after mood pick,
-    // so stacking a synth loop on top makes the mix muddy.
+    // Piano-ish 2-note accents sit gently under the mood song.
+    // No continuous layers — the real audio track is the background.
     if (scene === "greeting") {
-        playChord([659.25, 783.99, 987.77], 0.35, "triangle", 0.32);
+        playChord([659.25, 987.77], 1.1, "sine", 0.14);
     }
     if (scene === "mood") {
-        playChord([523.25, 659.25, 783.99, 1046.5], 0.35, "triangle", 0.32);
+        playChord([523.25, 783.99], 1.1, "sine", 0.14);
     }
     if (scene === "feelingCheck") {
         fcNoAttempts = 0;
         resetNoBtn();
-        playChord([587.33, 740, 880], 0.32, "triangle", 0.30);
+        playChord([587.33, 880], 1.0, "sine", 0.13);
     }
     if (scene === "smug") {
-        playChord([523.25, 659.25, 783.99, 1046.5], 0.28, "triangle", 0.32);
+        playChord([659.25, 987.77], 1.1, "sine", 0.14);
         setTimeout(() => smallConfetti(80), 200);
     }
     if (scene === "reminders") {
-        playChord([523.25, 659.25, 783.99], 0.32, "triangle", 0.30);
+        playChord([523.25, 783.99], 1.0, "sine", 0.13);
     }
     if (scene === "love") {
         launchConfetti();
-        // Single finale accent over the mood song — low volume so it layers gently.
-        playSfx("chime", 0.35);
+        playSfx("chime", 0.3);
     }
 }
 
@@ -166,12 +164,9 @@ function openEnvelope() {
     envelope.classList.add("opening");
     resumeAudio();
     primeMediaElements();
-    // opening sparkle — two arpeggios, spaced so they don't overlap.
-    playChord([523.25, 659.25, 783.99, 1046.5], 0.32, "triangle", 0.36);
-    setTimeout(() => {
-        playChord([783.99, 987.77, 1174.66], 0.38, "triangle", 0.34);
-        goTo("greeting");
-    }, 420);
+    // Gentle opening arpeggio — 3 soft piano notes rising.
+    playChord([523.25, 783.99, 1046.5], 1.2, "sine", 0.17, 0.1);
+    setTimeout(() => goTo("greeting"), 420);
 }
 envelope.addEventListener("click", openEnvelope);
 envelope.addEventListener("keydown", (e) => {
@@ -215,9 +210,9 @@ function renderGift() {
     const next = $("#gift-next");
     next.textContent = (giftIdx < m.slides.length - 1) ? "Tiếp ♥" : "Anh hỏi bé xíu →";
 
-    // heart burst ambient — single soft tone so it doesn't fight the song.
+    // heart burst ambient — one soft piano note.
     spawnHeart(); spawnHeart();
-    playTone(m.notes[giftIdx % m.notes.length], 0.32, "triangle", 0.28);
+    playTone(m.notes[giftIdx % m.notes.length], 0.9, "sine", 0.12);
 }
 
 $("#gift-next").addEventListener("click", () => {
@@ -266,7 +261,7 @@ function escapeNo() {
     noBtn.style.transform = `translate(${tx}px, ${ty}px)`;
     noBtn.textContent = noTexts[Math.min(fcNoAttempts, noTexts.length - 1)];
     fcTitle.textContent = noTitles[Math.min(fcNoAttempts, noTitles.length - 1)];
-    playTone(220 + fcNoAttempts * 40, 0.08);
+    playTone(660 + fcNoAttempts * 80, 0.5, "sine", 0.1);
 }
 
 function chaosThenEnd() {
@@ -456,30 +451,45 @@ function resumeAudio() {
     // Also make sure the silent media element is playing (keeps iOS media session alive)
     if (mediaUnlock && mediaUnlock.paused) mediaUnlock.play().catch(() => {});
 }
-// Schedule a single tone at an absolute audio-context time
-function playToneAt(freq, startAt, dur = 0.35, type = "triangle", vol = 0.42) {
+// Piano-ish voicing: sine fundamental + 2nd & 3rd harmonics at decreasing
+// gains, lowpass filter to tame brightness, soft attack + long exponential
+// decay. Sounds like a muted bell/music-box rather than an 8-bit chiptune.
+// `type` is kept in the signature for backward compat but ignored.
+function playToneAt(freq, startAt, dur = 1.1, type = "sine", vol = 0.18) {
     if (muted) return;
     const a = getAudio(); if (!a || !masterGain) return;
     try {
-        const start = startAt !== undefined ? startAt : a.currentTime;
-        const osc = a.createOscillator();
-        const gain = a.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, start);
-        const attack = 0.015;
-        const release = Math.min(0.18, dur * 0.5);
-        gain.gain.setValueAtTime(0.0001, start);
-        gain.gain.exponentialRampToValueAtTime(vol, start + attack);
-        gain.gain.setValueAtTime(vol, Math.max(start + attack, start + dur - release));
-        gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
-        osc.connect(gain).connect(masterGain);
-        osc.start(start);
-        osc.stop(start + dur + 0.03);
+        const start = startAt !== undefined ? startAt : a.currentTime + 0.005;
+        const end = start + dur;
+
+        const voiceGain = a.createGain();
+        voiceGain.gain.setValueAtTime(0.0001, start);
+        voiceGain.gain.exponentialRampToValueAtTime(vol, start + 0.012);
+        voiceGain.gain.exponentialRampToValueAtTime(0.0001, end);
+
+        const lp = a.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.value = 2800;
+        lp.Q.value = 0.5;
+
+        voiceGain.connect(lp).connect(masterGain);
+
+        const partials = [[1, 1.0], [2, 0.22], [3, 0.08]];
+        for (const [mul, g] of partials) {
+            const osc = a.createOscillator();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq * mul, start);
+            const pg = a.createGain();
+            pg.gain.value = g;
+            osc.connect(pg).connect(voiceGain);
+            osc.start(start);
+            osc.stop(end + 0.05);
+        }
     } catch (e) {}
 }
 function playTone(freq, dur, type, vol) { playToneAt(freq, undefined, dur, type, vol); }
-// Arpeggio — notes scheduled via AudioContext timeline (not setTimeout) for rock-solid timing on iOS
-function playChord(freqs, dur = 0.4, type = "triangle", vol = 0.38, spacing = 0.045) {
+// Soft arpeggio, notes timed on the audio-context clock for iOS reliability.
+function playChord(freqs, dur = 1.0, type = "sine", vol = 0.16, spacing = 0.08) {
     if (muted) return;
     const a = getAudio(); if (!a) return;
     resumeAudio();
@@ -607,8 +617,8 @@ soundToggle.addEventListener("click", () => {
         if (masterGain) masterGain.gain.setTargetAtTime(MASTER_VOL, audioCtx.currentTime, 0.05);
         // Resume the mood song if one was picked before mute.
         if (currentSongId) playSong(currentSongId);
-        // confirmation ping — confirms audio is really flowing
-        playChord([523.25, 659.25, 783.99], 0.32);
+        // Soft confirmation ping.
+        playTone(783.99, 0.8, "sine", 0.12);
     }
 });
 
