@@ -90,7 +90,7 @@ const PRELOAD = [
 PRELOAD.forEach(src => { const i = new Image(); i.src = src; });
 
 // ================== Scene order (progress bar) ==================
-const SCENE_ORDER = ["envelope","greeting","mood","gift","feelingCheck","smug","reminders","love"];
+const SCENE_ORDER = ["envelope","greeting","mood","gift","feelingCheck","smug","match","reminders","love"];
 const progressEl = $("#progress");
 SCENE_ORDER.slice(1).forEach(() => {
     const d = document.createElement("div");
@@ -141,6 +141,10 @@ function onSceneEnter(scene) {
     if (scene === "smug") {
         playChord([659.25, 987.77], 1.1, "sine", 0.14);
         setTimeout(() => smallConfetti(80), 200);
+    }
+    if (scene === "match") {
+        initMatch();
+        playChord([587.33, 880], 1.0, "sine", 0.13);
     }
     if (scene === "reminders") {
         playChord([523.25, 783.99], 1.0, "sine", 0.13);
@@ -315,6 +319,106 @@ noBtn.addEventListener("touchstart", (e) => {
     if (fcNoAttempts >= 4) return chaosThenEnd();
     escapeNo();
 }, { passive: false });
+
+// ================== 6.5. Memory match minigame ==================
+// Six pairs of cute images on a 3x4 grid. Flip one, flip another; match
+// keeps them up, mismatch flips both back after a brief pause. Complete all
+// six pairs to advance to the reminders scene. No score, no timer — chill.
+const MATCH_IMAGES = [
+    "cat_dance.gif",
+    "cat_heart.gif",
+    "flower-gift.jpg",
+    "bouquet.jpg",
+    "happy-hearts.jpg",
+    "heart-offer.jpg",
+];
+const MATCH_PRAISES = [
+    "Giỏi rồi đó em",
+    "Khớp nè",
+    "Đẹp",
+    "Đúng rồi á",
+    "Em tinh ghê",
+    "Ghép ngọt",
+];
+
+let matchState = { firstPick: null, locked: false, matched: 0, advancing: false };
+
+function shuffled(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+function initMatch() {
+    const grid = $("#match-grid");
+    const status = $("#match-status");
+    grid.innerHTML = "";
+    status.textContent = "";
+    matchState = { firstPick: null, locked: false, matched: 0, advancing: false };
+
+    const deck = shuffled([...MATCH_IMAGES, ...MATCH_IMAGES]);
+    deck.forEach((img) => {
+        const card = document.createElement("div");
+        card.className = "match-card";
+        card.dataset.img = img;
+        card.innerHTML =
+            '<div class="match-card-inner">' +
+                '<div class="match-card-face match-card-front"></div>' +
+                '<div class="match-card-face match-card-back">' +
+                    `<img src="${img}" alt="" draggable="false">` +
+                '</div>' +
+            '</div>';
+        card.addEventListener("click", () => flipMatchCard(card));
+        grid.appendChild(card);
+    });
+}
+
+function flipMatchCard(card) {
+    if (matchState.advancing || matchState.locked) return;
+    if (card.classList.contains("flipped") || card.classList.contains("matched")) return;
+
+    card.classList.add("flipped");
+    playTone(659.25, 0.4, "sine", 0.1);
+
+    if (!matchState.firstPick) {
+        matchState.firstPick = card;
+        return;
+    }
+
+    const first = matchState.firstPick;
+    const second = card;
+    matchState.firstPick = null;
+
+    if (first.dataset.img === second.dataset.img) {
+        // Matched — celebrate a little.
+        setTimeout(() => {
+            first.classList.add("matched");
+            second.classList.add("matched");
+        }, 120);
+        matchState.matched++;
+        playTone(987.77, 0.7, "sine", 0.14);
+        const praise = MATCH_PRAISES[matchState.matched - 1] || "Hay quá em";
+        $("#match-status").textContent = `${praise} · ${matchState.matched}/${MATCH_IMAGES.length}`;
+        if (matchState.matched === MATCH_IMAGES.length) {
+            matchState.advancing = true;
+            $("#match-status").textContent = "Xong hết rồi — em đỉnh ghê.";
+            setTimeout(() => smallConfetti(80), 200);
+            playSfx("chime", 0.32);
+            setTimeout(() => goTo("reminders"), 1800);
+        }
+    } else {
+        // Mismatch — flip both back after a short look.
+        matchState.locked = true;
+        setTimeout(() => {
+            first.classList.remove("flipped");
+            second.classList.remove("flipped");
+            matchState.locked = false;
+        }, 820);
+    }
+}
 
 // ================== Floating hearts + sparkles ==================
 const heartsBg = $("#hearts-bg");
