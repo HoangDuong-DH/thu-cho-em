@@ -25,6 +25,10 @@
       href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Fredoka:wght@500;600;700&family=Patrick+Hand&family=Caveat:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
 
     <link rel="preload" as="image" href="envelope.png" />
     <link rel="preload" as="image" href="hello-babe.jpg" />
@@ -148,10 +152,32 @@
           <li><span class="icon">🏃‍♀️</span><span>Vận động nhẹ một chút</span></li>
           <li><span class="icon">🌸</span><span>Cho phép mình không ổn, lúc không ổn</span></li>
         </ul>
-        <button class="cta" data-go="love">Nhớ rồi</button>
+        <button class="cta" data-go="night">Nhớ rồi</button>
       </section>
 
-      <!-- 8. Love ending -->
+      <!-- 8. Night transition -->
+      <section class="scene night-scene" data-scene="night">
+        <div class="moon-wrap" aria-hidden="true">
+          <span class="moon"></span>
+          <span class="moon-glow"></span>
+        </div>
+        <h1>NIGHT MODE: CHILL QUEST</h1>
+        <p class="sub">
+          Nhấn theo từng mảnh ký ức để đi qua câu chuyện dịu dàng này.
+        </p>
+        <div class="night-steps" id="night-steps">
+          <button class="night-step active" data-step="0" type="button">STAGE 01</button>
+          <button class="night-step" data-step="1" type="button">STAGE 02</button>
+          <button class="night-step" data-step="2" type="button">STAGE 03</button>
+          <button class="night-step" data-step="3" type="button">STAGE 04</button>
+          <button class="night-step" data-step="4" type="button">STAGE 05</button>
+          <button class="night-step" data-step="5" type="button">STAGE 06</button>
+        </div>
+        <p class="night-line" id="night-line" aria-live="polite"></p>
+        <button class="cta" id="night-next" disabled data-go="love">PRESS START TO CONTINUE</button>
+      </section>
+
+      <!-- 9. Love ending -->
       <section class="scene" data-scene="love">
         <img src="love-you.jpg" class="scene-img round big" alt="" draggable="false" />
         <h1 class="script glow">I love you.</h1>

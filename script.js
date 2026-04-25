@@ -1,5 +1,5 @@
 // ================== App Version ==================
-const APP_VERSION = "audio-enhanced-v4";
+const APP_VERSION = "night-transition-8bit-v2";
 console.log("App version:", APP_VERSION);
 
 // ================== Utilities ==================
@@ -182,6 +182,7 @@ const SCENE_ORDER = [
     "smug",
     "match",
     "reminders",
+    "night",
     "love",
 ];
 
@@ -242,6 +243,10 @@ function goTo(scene) {
 }
 
 function onSceneEnter(scene) {
+    if (scene !== "night") {
+        stopNightChipBgm();
+    }
+
     if (HEART_QUIET_SCENES.has(scene)) {
         stopHearts();
     } else {
@@ -277,6 +282,12 @@ function onSceneEnter(scene) {
 
     if (scene === "reminders") {
         playChord([523.25, 783.99], 1.0, "sine", 0.13);
+    }
+
+    if (scene === "night") {
+        initNightScene();
+        startNightChipBgm();
+        playChord([392, 523.25, 659.25], 1.2, "square", 0.08, 0.06);
     }
 
     if (scene === "love") {
@@ -704,6 +715,95 @@ function flipMatchCard(card) {
     }
 }
 
+// ================== Night transition mini-flow ==================
+const NIGHT_LINES = [
+    "Có những chuyện nhỏ, thật ra không cần làm hai đứa nặng lòng lâu. Mong rằng mình có thể hiểu nhau nhẹ hơn, thay vì luôn nghĩ rằng ai phải vì ai theo một cách nào đó.",
+    "Cuộc sống của mỗi người vốn đã có nhiều điều phải mang rồi. Khi tìm đến nhau, mình chỉ mong có những khoảnh khắc dịu lại, có sự thấu hiểu, có một khoảng yên vừa đủ cho cả hai.",
+    "Mình tin rằng khi đủ thời gian, mỗi người sẽ tự biết cách trở nên phù hợp hơn. Không phải vì bị đòi hỏi phải thay đổi, mà vì tình cảm đủ chân thành để cả hai muốn mềm lại với nhau.",
+    "Điều mình quý là con người thật của nhau, không phải một phiên bản hoàn hảo nào đó. Có thể vẫn còn những phần chưa trọn vẹn, vẫn còn những lúc vụng về, nhưng đó cũng là một phần rất người trong mỗi đứa.",
+    "Đừng để chuyện hai đứa trở thành thêm một điều phải gồng. Hãy để nó là nơi mình được là chính mình, được nghỉ lại một chút, được thương bằng sự chân thành và trân trọng.",
+    "Rồi khi đủ chín, những tầng tình cảm sâu hơn sẽ tự đến.",
+];
+
+let nightStep = 0;
+let nightChipTimer = null;
+
+const NIGHT_CHIP_NOTES = [261.63, 329.63, 392.0, 523.25, 392.0, 329.63, 293.66, 349.23];
+const NIGHT_CHIP_BASS = [130.81, 146.83, 164.81, 146.83];
+
+function renderNightStep() {
+    const line = $("#night-line");
+    const nextBtn = $("#night-next");
+    const wasDisabled = nextBtn ? nextBtn.disabled : true;
+
+    $$(".night-step").forEach((btn, idx) => {
+        btn.classList.remove("active", "done");
+        if (idx < nightStep) btn.classList.add("done");
+        if (idx === nightStep) btn.classList.add("active");
+    });
+
+    if (line) {
+        line.textContent = NIGHT_LINES[Math.max(0, Math.min(nightStep - 1, NIGHT_LINES.length - 1))] || "";
+    }
+
+    if (nextBtn) {
+        nextBtn.disabled = nightStep < NIGHT_LINES.length;
+        if (wasDisabled && !nextBtn.disabled) {
+            playSfx("chime", 0.26);
+        }
+    }
+}
+
+function advanceNightStep(step) {
+    if (step !== nightStep) return;
+    nightStep = Math.min(NIGHT_LINES.length, nightStep + 1);
+    renderNightStep();
+    playTone(392 + nightStep * 38, 0.14, "square", 0.12);
+    setTimeout(() => playTone(523.25 + nightStep * 35, 0.1, "square", 0.08), 90);
+    playSfx("pop", 0.22);
+}
+
+function initNightScene() {
+    nightStep = 0;
+    renderNightStep();
+}
+
+$$(".night-step").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        resumeAudio();
+        const step = Number(btn.dataset.step);
+        advanceNightStep(step);
+    });
+});
+
+function startNightChipBgm() {
+    stopNightChipBgm();
+
+    let i = 0;
+    const tempoMs = 240;
+
+    nightChipTimer = setInterval(() => {
+        if (currentScene !== "night" || muted) return;
+
+        const lead = NIGHT_CHIP_NOTES[i % NIGHT_CHIP_NOTES.length];
+        const bass = NIGHT_CHIP_BASS[i % NIGHT_CHIP_BASS.length];
+
+        playTone(lead, 0.16, "square", 0.08);
+        if (i % 2 === 0) {
+            setTimeout(() => playTone(bass, 0.11, "square", 0.06), 60);
+        }
+
+        i++;
+    }, tempoMs);
+}
+
+function stopNightChipBgm() {
+    if (nightChipTimer) {
+        clearInterval(nightChipTimer);
+        nightChipTimer = null;
+    }
+}
+
 // ================== Floating hearts + sparkles ==================
 const heartsBg = $("#hearts-bg");
 
@@ -997,15 +1097,14 @@ function playToneAt(freq, startAt, dur = 1.1, type = "sine", vol = 0.18) {
 
         voiceGain.connect(lp).connect(masterGain);
 
-        const partials = [
-            [1, 1.0],
-            [2, 0.22],
-            [3, 0.08],
-        ];
+        const waveType = ["sine", "square", "triangle", "sawtooth"].includes(type) ? type : "sine";
+        const partials = waveType === "sine"
+            ? [[1, 1.0], [2, 0.22], [3, 0.08]]
+            : [[1, 1.0]];
 
         for (const [mul, g] of partials) {
             const osc = a.createOscillator();
-            osc.type = "sine";
+            osc.type = waveType;
             osc.frequency.setValueAtTime(freq * mul, start);
 
             const pg = a.createGain();
