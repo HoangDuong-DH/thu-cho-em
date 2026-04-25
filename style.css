@@ -761,6 +761,81 @@ body:not(.started) #progress { opacity: 0; pointer-events: none; }
     margin: 6px 0 0;
 }
 
+/* ===== Night transition scene ===== */
+.night-scene {
+    background:
+        radial-gradient(120% 95% at 50% -8%, rgba(166, 181, 255, 0.3) 0%, transparent 55%),
+        radial-gradient(95% 80% at 50% 115%, rgba(132, 93, 194, 0.28) 0%, transparent 65%),
+        linear-gradient(180deg, #0e1530 0%, #161b3d 45%, #1e1840 100%);
+}
+.night-scene h1,
+.night-scene .sub {
+    color: #eef0ff;
+}
+.night-scene .sub {
+    max-width: 34ch;
+    color: #d9ddff;
+}
+.moon-wrap {
+    position: relative;
+    width: 128px;
+    height: 128px;
+    margin-bottom: 6px;
+}
+.moon {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 36% 32%, #fffdf0 0%, #f3e6bd 45%, #d3c694 100%);
+    box-shadow: 0 0 20px rgba(243, 230, 189, 0.45);
+}
+.moon-glow {
+    position: absolute;
+    inset: -22px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(213, 206, 255, 0.45) 0%, rgba(142, 139, 237, 0.08) 55%, transparent 75%);
+    animation: moonPulse 3.4s ease-in-out infinite;
+}
+@keyframes moonPulse {
+    0%, 100% { transform: scale(0.95); opacity: 0.8; }
+    50%      { transform: scale(1.05); opacity: 1; }
+}
+.night-steps {
+    width: min(92vw, 460px);
+    display: grid;
+    gap: 9px;
+}
+.night-step {
+    border: 1px solid rgba(196, 197, 255, 0.28);
+    background: rgba(19, 27, 64, 0.58);
+    color: #dfe3ff;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: var(--t-sm);
+    font-weight: 600;
+    text-align: left;
+}
+.night-step.active {
+    border-color: rgba(243, 230, 189, 0.82);
+    background: rgba(69, 59, 112, 0.64);
+    box-shadow: 0 0 0 2px rgba(238, 230, 191, 0.22);
+}
+.night-step.done {
+    color: #f6f0d3;
+}
+.night-line {
+    min-height: 3.1em;
+    max-width: 34ch;
+    color: #f6f0d3;
+    font-family: var(--f-hand);
+    font-size: calc(var(--t-md) + 2px);
+    margin: 2px 0;
+}
+#night-next[disabled] {
+    opacity: 0.55;
+    filter: grayscale(0.2);
+}
+
 @media (max-height: 520px) and (orientation: landscape) {
     .scene { padding-top: 28px; padding-bottom: 60px; gap: 10px; }
     .scene-img { max-height: 56vh; width: clamp(130px, 26vw, 200px); }

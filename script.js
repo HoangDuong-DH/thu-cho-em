@@ -1,5 +1,5 @@
 // ================== App Version ==================
-const APP_VERSION = "audio-enhanced-v4";
+const APP_VERSION = "night-transition-v1";
 console.log("App version:", APP_VERSION);
 
 // ================== Utilities ==================
@@ -182,6 +182,7 @@ const SCENE_ORDER = [
     "smug",
     "match",
     "reminders",
+    "night",
     "love",
 ];
 
@@ -277,6 +278,11 @@ function onSceneEnter(scene) {
 
     if (scene === "reminders") {
         playChord([523.25, 783.99], 1.0, "sine", 0.13);
+    }
+
+    if (scene === "night") {
+        initNightScene();
+        playChord([392, 523.25, 659.25], 1.4, "sine", 0.11);
     }
 
     if (scene === "love") {
@@ -703,6 +709,55 @@ function flipMatchCard(card) {
         }, 820);
     }
 }
+
+// ================== Night transition mini-flow ==================
+const NIGHT_LINES = [
+    "Có những chuyện nhỏ không đáng để hai đứa nặng lòng vì nhau nữa.",
+    "Đi bên nhau là để có nhẹ nhàng và thấu hiểu, không phải thêm một vai diễn.",
+    "Mình yêu con người thật của nhau, không phải một phiên bản bị kỳ vọng.",
+    "Khi đủ chín, tình cảm tự nâng lên. Cứ chân thành và trân trọng là đủ.",
+];
+
+let nightStep = 0;
+
+function renderNightStep() {
+    const line = $("#night-line");
+    const nextBtn = $("#night-next");
+
+    $$(".night-step").forEach((btn, idx) => {
+        btn.classList.remove("active", "done");
+        if (idx < nightStep) btn.classList.add("done");
+        if (idx === nightStep) btn.classList.add("active");
+    });
+
+    if (line) {
+        line.textContent = NIGHT_LINES[Math.max(0, Math.min(nightStep - 1, NIGHT_LINES.length - 1))] || "";
+    }
+
+    if (nextBtn) {
+        nextBtn.disabled = nightStep < NIGHT_LINES.length;
+    }
+}
+
+function advanceNightStep(step) {
+    if (step !== nightStep) return;
+    nightStep = Math.min(NIGHT_LINES.length, nightStep + 1);
+    renderNightStep();
+    playTone(523.25 + nightStep * 55, 0.5, "sine", 0.1);
+}
+
+function initNightScene() {
+    nightStep = 0;
+    renderNightStep();
+}
+
+$$(".night-step").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        resumeAudio();
+        const step = Number(btn.dataset.step);
+        advanceNightStep(step);
+    });
+});
 
 // ================== Floating hearts + sparkles ==================
 const heartsBg = $("#hearts-bg");
