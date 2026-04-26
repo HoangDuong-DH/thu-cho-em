@@ -1,5 +1,5 @@
 // ================== App Version ==================
-const APP_VERSION = "night-transition-8bit-v2";
+const APP_VERSION = "night-letter-8bit-v3";
 console.log("App version:", APP_VERSION);
 
 // ================== Utilities ==================
@@ -21,6 +21,285 @@ addEventListener("gesturestart", (e) => e.preventDefault());
 addEventListener("dblclick", (e) => {
     if (e.target.closest("button, #envelope-container")) e.preventDefault();
 });
+
+// ================== Letter Scene Injection ==================
+function injectLetterStyles() {
+    if ($("#letter-scene-style")) return;
+
+    const style = document.createElement("style");
+    style.id = "letter-scene-style";
+    style.textContent = `
+        .scene[data-scene="letter"] {
+            background:
+                radial-gradient(circle at 50% 8%, rgba(255, 225, 185, 0.22), transparent 32%),
+                radial-gradient(circle at 15% 20%, rgba(255, 143, 176, 0.16), transparent 28%),
+                linear-gradient(180deg, #101729 0%, #151a31 45%, #21162b 100%);
+            color: #fff7ee;
+            overflow: hidden;
+        }
+
+        .letter-scene-wrap {
+            min-height: calc(var(--vh, 1vh) * 100);
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 28px 18px;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .letter-scene-wrap::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(circle, rgba(255,255,255,0.9) 0 1px, transparent 1.5px),
+                radial-gradient(circle, rgba(255,255,255,0.5) 0 1px, transparent 1.5px);
+            background-size: 46px 46px, 72px 72px;
+            background-position: 0 0, 18px 22px;
+            opacity: 0.16;
+            pointer-events: none;
+        }
+
+        .letter-scene-wrap::after {
+            content: "";
+            position: absolute;
+            left: -10%;
+            right: -10%;
+            bottom: 0;
+            height: 26%;
+            background:
+                linear-gradient(to top, rgba(4, 8, 18, 0.8), transparent),
+                repeating-linear-gradient(
+                    90deg,
+                    rgba(255,255,255,0.12) 0 2px,
+                    transparent 2px 12px
+                );
+            clip-path: polygon(0 62%, 7% 62%, 7% 48%, 13% 48%, 13% 70%, 20% 70%, 20% 36%, 27% 36%, 27% 64%, 35% 64%, 35% 44%, 44% 44%, 44% 72%, 52% 72%, 52% 30%, 61% 30%, 61% 66%, 70% 66%, 70% 50%, 78% 50%, 78% 72%, 88% 72%, 88% 40%, 96% 40%, 96% 64%, 100% 64%, 100% 100%, 0 100%);
+            opacity: 0.42;
+            pointer-events: none;
+        }
+
+        .letter-card {
+            position: relative;
+            z-index: 2;
+            width: min(620px, 100%);
+            background:
+                linear-gradient(180deg, rgba(255, 249, 239, 0.98), rgba(255, 242, 226, 0.98));
+            color: #3a2630;
+            border: 2px solid rgba(255, 198, 128, 0.55);
+            border-radius: 24px;
+            box-shadow:
+                0 24px 70px rgba(0, 0, 0, 0.42),
+                0 0 0 6px rgba(255,255,255,0.05),
+                inset 0 0 0 1px rgba(255,255,255,0.8);
+            padding: 26px 22px 22px;
+            box-sizing: border-box;
+            transform: translateY(8px);
+            animation: letterFloatIn 620ms ease both;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+        }
+
+        @keyframes letterFloatIn {
+            from {
+                opacity: 0;
+                transform: translateY(26px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .letter-card::before {
+            content: "";
+            position: absolute;
+            inset: 10px;
+            border: 1px dashed rgba(145, 91, 70, 0.22);
+            border-radius: 18px;
+            pointer-events: none;
+        }
+
+        .letter-kicker {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            font-size: 12px;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: rgba(91, 54, 67, 0.68);
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .letter-title {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            margin: 0 0 18px;
+            font-size: clamp(22px, 6vw, 34px);
+            line-height: 1.15;
+            color: #5b3245;
+            font-weight: 900;
+        }
+
+        .letter-body {
+            position: relative;
+            z-index: 1;
+            font-size: clamp(16px, 4.2vw, 18px);
+            line-height: 1.72;
+            letter-spacing: -0.01em;
+        }
+
+        .letter-body p {
+            margin: 0 0 15px;
+        }
+
+        .letter-body p:last-child {
+            margin-bottom: 0;
+        }
+
+        .letter-signoff {
+            font-weight: 800;
+            color: #8a3c59;
+        }
+
+        .letter-ps {
+            margin-top: 2px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(138, 60, 89, 0.18);
+            color: #5a3442;
+            font-weight: 650;
+        }
+
+        .letter-actions {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: center;
+            margin-top: 24px;
+        }
+
+        .letter-next-btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 13px 22px;
+            background: linear-gradient(135deg, #ff8fb0, #ef6f93);
+            color: #fff;
+            font-weight: 900;
+            font-size: 15px;
+            box-shadow: 0 12px 26px rgba(239, 111, 147, 0.35);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .letter-next-btn:active {
+            transform: translateY(1px) scale(0.99);
+        }
+
+        .letter-pixel-moon {
+            position: absolute;
+            z-index: 1;
+            top: 8%;
+            right: 10%;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: #ffe8a3;
+            box-shadow:
+                0 0 0 5px rgba(255, 232, 163, 0.1),
+                0 0 28px rgba(255, 232, 163, 0.45);
+            image-rendering: pixelated;
+            opacity: 0.9;
+        }
+
+        .letter-pixel-moon::after {
+            content: "";
+            position: absolute;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #101729;
+            right: -8px;
+            top: -2px;
+        }
+
+        @media (max-width: 420px) {
+            .letter-scene-wrap {
+                padding: 20px 14px;
+                align-items: flex-start;
+                padding-top: 26px;
+            }
+
+            .letter-card {
+                border-radius: 20px;
+                padding: 24px 18px 20px;
+            }
+
+            .letter-body {
+                line-height: 1.66;
+            }
+
+            .letter-pixel-moon {
+                width: 42px;
+                height: 42px;
+                top: 14px;
+                right: 18px;
+                opacity: 0.45;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+}
+
+function createLetterScene() {
+    if ($('.scene[data-scene="letter"]')) return;
+
+    injectLetterStyles();
+
+    const scene = document.createElement("section");
+    scene.className = "scene";
+    scene.dataset.scene = "letter";
+
+    scene.innerHTML = `
+        <div class="letter-scene-wrap">
+            <div class="letter-pixel-moon" aria-hidden="true"></div>
+
+            <article class="letter-card" aria-label="Lá thư">
+                <div class="letter-kicker">Night Letter</div>
+                <h1 class="letter-title">Một lá thư nhỏ</h1>
+
+                <div class="letter-body">
+                    <p>Anh thấy dạo này quanh em khá bận và nhiều áp lực. Có những giai đoạn mình khó tránh khỏi việc phải cố gắng rất nhiều và nhiều hơn nữa.</p>
+
+                    <p>Nhưng ở vị trí của anh, một người đang nghiêm túc với em và thật sự để tâm đến em, anh vẫn mong em nhẹ với bản thân hơn một chút. Nghỉ ngơi đúng lúc cũng là cách để em giữ sức cho chặng đường dài.</p>
+
+                    <p>Và nếu nói chuyện với anh giúp em giải tỏa phần nào, thì anh rất trân trọng điều đó. Anh vui vì được ở đây với em.</p>
+
+                    <p class="letter-signoff">See yah, love u, peace. 🌻</p>
+
+                    <p class="letter-ps">P/s: nhớ chừa slot cho anh rửa chén nhe he he 🙆‍♂️</p>
+                </div>
+
+                <div class="letter-actions">
+                    <button class="letter-next-btn" type="button" data-go="greeting">Tiếp tục →</button>
+                </div>
+            </article>
+        </div>
+    `;
+
+    const envelopeScene = $('.scene[data-scene="envelope"]');
+
+    if (envelopeScene && envelopeScene.parentNode) {
+        envelopeScene.insertAdjacentElement("afterend", scene);
+    } else {
+        document.body.appendChild(scene);
+    }
+}
+
+createLetterScene();
 
 // ================== Dynamic UI Enhancements ==================
 function createMusicStartButton() {
@@ -69,7 +348,7 @@ function createVersionBadge() {
     badge.style.bottom = "8px";
     badge.style.zIndex = "9999";
     badge.style.fontSize = "10px";
-    badge.style.color = "rgba(0,0,0,0.32)";
+    badge.style.color = "rgba(255,255,255,0.35)";
     badge.style.pointerEvents = "none";
     badge.style.userSelect = "none";
 
@@ -101,9 +380,9 @@ const MOODS = {
         song: "anh-biet",
         notes: [523.25, 659.25, 783.99, 1046.5, 987.77, 1046.5, 783.99, 659.25],
         slides: [
-            { img: "hi-paw.jpg",       title: "Vui ghê đó",             text: "Giữ lấy cảm giác này đi. Không phải ngày nào cũng có đâu nha." },
-            { img: "happy-hearts.jpg", title: "Một ngày rất xinh",      text: "Có những khoảnh khắc nhỏ nhưng đủ làm ngày hôm nay nhẹ hơn." },
-            { img: "heart-offer.jpg",  title: "Một chút vui nữa",       text: "Thêm một miếng vui nhỏ để ngày này dễ thương hơn." },
+            { img: "hi-paw.jpg", title: "Vui ghê đó", text: "Giữ lấy cảm giác này đi. Không phải ngày nào cũng có đâu nha." },
+            { img: "happy-hearts.jpg", title: "Một ngày rất xinh", text: "Có những khoảnh khắc nhỏ nhưng đủ làm ngày hôm nay nhẹ hơn." },
+            { img: "heart-offer.jpg", title: "Một chút vui nữa", text: "Thêm một miếng vui nhỏ để ngày này dễ thương hơn." },
         ],
     },
     excited: {
@@ -112,9 +391,9 @@ const MOODS = {
         song: "anh-biet",
         notes: [659.25, 783.99, 987.77, 1174.66, 1318.51, 1174.66, 987.77, 783.99],
         slides: [
-            { img: "cat_dance.gif",    title: "Năng lượng xịn ghê",     text: "Cứ giữ cái vibe này thêm một chút nữa." },
-            { img: "flower-gift.jpg",  title: "Tặng một bó hoa",        text: "Ngày đẹp thì nên có thêm một thứ nhỏ xinh đi kèm." },
-            { img: "thuong-lam.jpg",   title: "Ổn áp lắm rồi",          text: "Cứ vui như vậy đã, mai tính tiếp." },
+            { img: "cat_dance.gif", title: "Năng lượng xịn ghê", text: "Cứ giữ cái vibe này thêm một chút nữa." },
+            { img: "flower-gift.jpg", title: "Tặng một bó hoa", text: "Ngày đẹp thì nên có thêm một thứ nhỏ xinh đi kèm." },
+            { img: "thuong-lam.jpg", title: "Ổn áp lắm rồi", text: "Cứ vui như vậy đã, mai tính tiếp." },
         ],
     },
     normal: {
@@ -123,9 +402,9 @@ const MOODS = {
         song: "anh-biet",
         notes: [523.25, 587.33, 659.25, 783.99, 880, 783.99, 659.25, 587.33],
         slides: [
-            { img: "bleh.jpg",         title: "Bình thường cũng đáng",  text: "Không phải ngày nào cũng cần rực rỡ. Vậy là ổn rồi." },
-            { img: "flower-gift.jpg",  title: "Có hoa nè",              text: "Để ngày thường thơm hơn một chút." },
-            { img: "bouquet.jpg",      title: "Vẫn đáng được dịu dàng", text: "Kể cả những ngày chẳng có gì đặc biệt." },
+            { img: "bleh.jpg", title: "Bình thường cũng đáng", text: "Không phải ngày nào cũng cần rực rỡ. Vậy là ổn rồi." },
+            { img: "flower-gift.jpg", title: "Có hoa nè", text: "Để ngày thường thơm hơn một chút." },
+            { img: "bouquet.jpg", title: "Vẫn đáng được dịu dàng", text: "Kể cả những ngày chẳng có gì đặc biệt." },
         ],
     },
     sad: {
@@ -134,9 +413,9 @@ const MOODS = {
         song: "vuong",
         notes: [440, 392, 349.23, 329.63, 349.23, 392, 440, 493.88],
         slides: [
-            { img: "hug.jpg",          title: "Nghỉ một chút nha",      text: "Buồn một chút cũng không sao. Cảm xúc đó có thể được đặt xuống từ từ." },
-            { img: "cat_heart.gif",    title: "Thở chậm lại",           text: "Một hơi sâu trước đã. Không cần phải ổn ngay lập tức." },
-            { img: "thuong-lam.jpg",   title: "Không cần gồng quá",     text: "Đi qua từng chút một cũng được." },
+            { img: "hug.jpg", title: "Nghỉ một chút nha", text: "Buồn một chút cũng không sao. Cảm xúc đó có thể được đặt xuống từ từ." },
+            { img: "cat_heart.gif", title: "Thở chậm lại", text: "Một hơi sâu trước đã. Không cần phải ổn ngay lập tức." },
+            { img: "thuong-lam.jpg", title: "Không cần gồng quá", text: "Đi qua từng chút một cũng được." },
         ],
     },
     tired: {
@@ -145,9 +424,9 @@ const MOODS = {
         song: "vuong",
         notes: [523.25, 493.88, 440, 392, 440, 493.88, 523.25, 587.33],
         slides: [
-            { img: "hug.jpg",          title: "Nghỉ đi một chút",       text: "Mệt thì dừng lại đã. Không cần giải thích với ai cả." },
-            { img: "cat_heart.gif",    title: "Nhắm mắt chút đi",       text: "Để nhạc chạy nhẹ thôi, không cần làm gì hết." },
-            { img: "bouquet.jpg",      title: "Mai tính tiếp nha",      text: "Giờ chỉ cần thở nhẹ thôi. Vậy là đủ." },
+            { img: "hug.jpg", title: "Nghỉ đi một chút", text: "Mệt thì dừng lại đã. Không cần giải thích với ai cả." },
+            { img: "cat_heart.gif", title: "Nhắm mắt chút đi", text: "Để nhạc chạy nhẹ thôi, không cần làm gì hết." },
+            { img: "bouquet.jpg", title: "Mai tính tiếp nha", text: "Giờ chỉ cần thở nhẹ thôi. Vậy là đủ." },
         ],
     },
 };
@@ -175,6 +454,7 @@ preloadImages();
 // ================== Scene order ==================
 const SCENE_ORDER = [
     "envelope",
+    "letter",
     "greeting",
     "mood",
     "gift",
@@ -189,6 +469,8 @@ const SCENE_ORDER = [
 const progressEl = $("#progress");
 
 if (progressEl) {
+    progressEl.innerHTML = "";
+
     SCENE_ORDER.slice(1).forEach(() => {
         const d = document.createElement("div");
         d.className = "p";
@@ -238,6 +520,8 @@ function goTo(scene) {
         document.body.classList.add("started");
     }
 
+    document.body.classList.toggle("night-letter-mode", scene === "letter" || scene === "night" || scene === "love");
+
     updateProgress(scene);
     onSceneEnter(scene);
 }
@@ -251,6 +535,12 @@ function onSceneEnter(scene) {
         stopHearts();
     } else {
         startHearts();
+    }
+
+    if (scene === "letter") {
+        playChord([392, 523.25, 659.25], 1.25, "sine", 0.11, 0.08);
+        setTimeout(spawnHeart, 260);
+        setTimeout(spawnHeart, 520);
     }
 
     if (scene === "greeting") {
@@ -323,14 +613,11 @@ function openEnvelope() {
     preloadSongs();
 
     playSfx("envelope", 0.45);
-
-    // Phát nhạc thật trực tiếp từ gesture click.
-    // Không play/pause nhạc nền để unlock nữa.
     playSong(DEFAULT_SONG);
 
     playChord([523.25, 783.99, 1046.5], 1.2, "sine", 0.17, 0.1);
 
-    setTimeout(() => goTo("greeting"), 420);
+    setTimeout(() => goTo("letter"), 520);
 }
 
 if (envelope) {
