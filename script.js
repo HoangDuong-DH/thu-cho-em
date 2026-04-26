@@ -1,5 +1,5 @@
 // ================== App Version ==================
-const APP_VERSION = "night-letter-8bit-v3";
+const APP_VERSION = "night-letter-mini-game-8bit-v4";
 console.log("App version:", APP_VERSION);
 
 // ================== Utilities ==================
@@ -96,7 +96,6 @@ function injectLetterStyles() {
                 inset 0 0 0 1px rgba(255,255,255,0.8);
             padding: 26px 22px 22px;
             box-sizing: border-box;
-            transform: translateY(8px);
             animation: letterFloatIn 620ms ease both;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
         }
@@ -147,12 +146,14 @@ function injectLetterStyles() {
         .letter-body {
             position: relative;
             z-index: 1;
+            text-align: left;
             font-size: clamp(16px, 4.2vw, 18px);
             line-height: 1.72;
             letter-spacing: -0.01em;
         }
 
         .letter-body p {
+            text-align: left;
             margin: 0 0 15px;
         }
 
@@ -300,6 +301,216 @@ function createLetterScene() {
 }
 
 createLetterScene();
+
+// ================== Mini Game Scene Injection ==================
+function injectMiniGameStyles() {
+    if ($("#mini-game-style")) return;
+
+    const style = document.createElement("style");
+    style.id = "mini-game-style";
+
+    style.textContent = `
+        .scene[data-scene="miniGame"] {
+            background:
+                radial-gradient(circle at 50% 12%, rgba(255, 232, 163, 0.16), transparent 30%),
+                radial-gradient(circle at 15% 25%, rgba(255, 143, 176, 0.18), transparent 28%),
+                linear-gradient(180deg, #12182c 0%, #1c1b38 48%, #2b1830 100%);
+            color: #fff7ee;
+            overflow: hidden;
+        }
+
+        .mini-game-wrap {
+            min-height: calc(var(--vh, 1vh) * 100);
+            width: 100%;
+            box-sizing: border-box;
+            padding: 26px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .mini-game-card {
+            width: min(560px, 100%);
+            background: rgba(255, 249, 239, 0.96);
+            color: #3a2630;
+            border-radius: 24px;
+            padding: 22px 18px 20px;
+            box-shadow:
+                0 22px 60px rgba(0,0,0,0.38),
+                inset 0 0 0 1px rgba(255,255,255,0.75);
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .mini-game-title {
+            margin: 0 0 8px;
+            font-size: clamp(23px, 6vw, 34px);
+            line-height: 1.15;
+            color: #663447;
+            font-weight: 900;
+        }
+
+        .mini-game-sub {
+            margin: 0 auto 16px;
+            max-width: 420px;
+            font-size: 15px;
+            line-height: 1.55;
+            color: rgba(58, 38, 48, 0.72);
+        }
+
+        .mini-game-board {
+            width: 100%;
+            height: 330px;
+            border-radius: 20px;
+            background:
+                radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.75), transparent 34%),
+                linear-gradient(180deg, #fff3ea, #ffe1ec);
+            border: 2px solid rgba(239, 111, 147, 0.22);
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+            box-shadow: inset 0 0 22px rgba(255, 143, 176, 0.18);
+        }
+
+        .mini-catcher {
+            position: absolute;
+            left: 50%;
+            bottom: 16px;
+            width: 76px;
+            height: 42px;
+            transform: translateX(-50%);
+            border-radius: 16px 16px 24px 24px;
+            background: linear-gradient(180deg, #ffffff, #ffd5e2);
+            border: 2px solid rgba(138, 60, 89, 0.28);
+            box-shadow: 0 10px 18px rgba(138, 60, 89, 0.2);
+        }
+
+        .mini-catcher::before {
+            content: "🙆‍♂️";
+            position: absolute;
+            left: 50%;
+            top: -28px;
+            transform: translateX(-50%);
+            font-size: 30px;
+        }
+
+        .mini-fall {
+            position: absolute;
+            top: -42px;
+            font-size: 28px;
+            user-select: none;
+            pointer-events: none;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.14));
+        }
+
+        .mini-game-hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin: 14px 0 0;
+            font-weight: 800;
+            color: #6b394b;
+        }
+
+        .mini-game-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .mini-btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 12px 18px;
+            font-size: 15px;
+            font-weight: 900;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mini-btn.primary {
+            background: linear-gradient(135deg, #ff8fb0, #ef6f93);
+            color: #fff;
+            box-shadow: 0 12px 26px rgba(239, 111, 147, 0.28);
+        }
+
+        .mini-btn.ghost {
+            background: rgba(138, 60, 89, 0.08);
+            color: #6b394b;
+        }
+
+        .mini-game-note {
+            min-height: 24px;
+            margin-top: 10px;
+            font-weight: 800;
+            color: #8a3c59;
+        }
+
+        @media (max-width: 420px) {
+            .mini-game-board {
+                height: 310px;
+            }
+
+            .mini-game-card {
+                border-radius: 20px;
+                padding: 20px 14px 18px;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+}
+
+function createMiniGameScene() {
+    if ($('.scene[data-scene="miniGame"]')) return;
+
+    injectMiniGameStyles();
+
+    const scene = document.createElement("section");
+    scene.className = "scene";
+    scene.dataset.scene = "miniGame";
+
+    scene.innerHTML = `
+        <div class="mini-game-wrap">
+            <article class="mini-game-card">
+                <h1 class="mini-game-title">Hứng chút dịu dàng</h1>
+                <p class="mini-game-sub">Di chuyển cái chén nhỏ để hứng đủ 5 món dễ thương rơi xuống. Game nhẹ thôi, không áp lực.</p>
+
+                <div id="mini-game-board" class="mini-game-board">
+                    <div id="mini-catcher" class="mini-catcher"></div>
+                </div>
+
+                <div class="mini-game-hud">
+                    <span id="mini-score">Đã hứng: 0/5</span>
+                    <span id="mini-time">Còn: 20s</span>
+                </div>
+
+                <div id="mini-note" class="mini-game-note"></div>
+
+                <div class="mini-game-actions">
+                    <button id="mini-start" class="mini-btn primary" type="button">Bắt đầu</button>
+                    <button id="mini-skip" class="mini-btn ghost" type="button">Bỏ qua →</button>
+                </div>
+            </article>
+        </div>
+    `;
+
+    const giftScene = $('.scene[data-scene="gift"]');
+
+    if (giftScene && giftScene.parentNode) {
+        giftScene.insertAdjacentElement("afterend", scene);
+    } else {
+        document.body.appendChild(scene);
+    }
+}
+
+createMiniGameScene();
 
 // ================== Dynamic UI Enhancements ==================
 function createMusicStartButton() {
@@ -458,6 +669,7 @@ const SCENE_ORDER = [
     "greeting",
     "mood",
     "gift",
+    "miniGame",
     "feelingCheck",
     "smug",
     "match",
@@ -531,6 +743,10 @@ function onSceneEnter(scene) {
         stopNightChipBgm();
     }
 
+    if (scene !== "miniGame") {
+        stopMiniGameTimers();
+    }
+
     if (HEART_QUIET_SCENES.has(scene)) {
         stopHearts();
     } else {
@@ -549,6 +765,11 @@ function onSceneEnter(scene) {
 
     if (scene === "mood") {
         playChord([523.25, 783.99], 1.1, "sine", 0.14);
+    }
+
+    if (scene === "miniGame") {
+        resetMiniGame();
+        playChord([523.25, 659.25], 0.9, "sine", 0.11, 0.06);
     }
 
     if (scene === "feelingCheck") {
@@ -589,14 +810,15 @@ function onSceneEnter(scene) {
     }
 }
 
-// Wire data-go buttons
-$$("[data-go]").forEach(b => {
-    b.addEventListener("click", () => {
-        resumeAudio();
-        primeSfxElements();
-        playSfx("click", 0.35);
-        goTo(b.dataset.go);
-    });
+// Dynamic data-go handler
+document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-go]");
+    if (!b) return;
+
+    resumeAudio();
+    primeSfxElements();
+    playSfx("click", 0.35);
+    goTo(b.dataset.go);
 });
 
 // ================== Envelope ==================
@@ -692,7 +914,7 @@ function renderGift() {
 
     const next = $("#gift-next");
     if (next) {
-        next.textContent = giftIdx < m.slides.length - 1 ? "Tiếp ♥" : "Một câu hỏi nhỏ →";
+        next.textContent = giftIdx < m.slides.length - 1 ? "Tiếp ♥" : "Chơi một chút →";
     }
 
     spawnHeart();
@@ -713,10 +935,268 @@ if (giftNext) {
             giftIdx++;
             renderGift();
         } else {
-            goTo("feelingCheck");
+            goTo("miniGame");
         }
     });
 }
+
+// ================== Cute Catch Mini Game ==================
+let miniGameState = {
+    active: false,
+    score: 0,
+    timeLeft: 20,
+    catcherX: 50,
+    fallTimer: null,
+    clockTimer: null,
+    raf: null,
+    items: [],
+};
+
+const MINI_TARGET = 5;
+const MINI_GLYPHS = ["💗", "🌻", "✨", "🍓", "🌸", "🎀", "⭐"];
+
+function resetMiniGame() {
+    const board = $("#mini-game-board");
+    const catcher = $("#mini-catcher");
+    const score = $("#mini-score");
+    const time = $("#mini-time");
+    const note = $("#mini-note");
+    const start = $("#mini-start");
+
+    stopMiniGameTimers();
+
+    miniGameState = {
+        active: false,
+        score: 0,
+        timeLeft: 20,
+        catcherX: 50,
+        fallTimer: null,
+        clockTimer: null,
+        raf: null,
+        items: [],
+    };
+
+    if (board) {
+        board.querySelectorAll(".mini-fall").forEach(el => el.remove());
+    }
+
+    if (catcher) {
+        catcher.style.left = "50%";
+    }
+
+    if (score) score.textContent = "Đã hứng: 0/5";
+    if (time) time.textContent = "Còn: 20s";
+    if (note) note.textContent = "";
+    if (start) {
+        start.disabled = false;
+        start.textContent = "Bắt đầu";
+    }
+}
+
+function stopMiniGameTimers() {
+    if (miniGameState.fallTimer) {
+        clearInterval(miniGameState.fallTimer);
+        miniGameState.fallTimer = null;
+    }
+
+    if (miniGameState.clockTimer) {
+        clearInterval(miniGameState.clockTimer);
+        miniGameState.clockTimer = null;
+    }
+
+    if (miniGameState.raf) {
+        cancelAnimationFrame(miniGameState.raf);
+        miniGameState.raf = null;
+    }
+}
+
+function startMiniGame() {
+    const start = $("#mini-start");
+    const note = $("#mini-note");
+
+    if (miniGameState.active) return;
+
+    resetMiniGame();
+
+    miniGameState.active = true;
+
+    if (start) {
+        start.disabled = true;
+        start.textContent = "Đang chơi...";
+    }
+
+    if (note) {
+        note.textContent = "Hứng đủ 5 món là qua màn.";
+    }
+
+    playChord([523.25, 659.25, 783.99], 0.8, "sine", 0.12, 0.05);
+
+    miniGameState.fallTimer = setInterval(spawnMiniItem, 700);
+
+    miniGameState.clockTimer = setInterval(() => {
+        if (!miniGameState.active) return;
+
+        miniGameState.timeLeft--;
+
+        const time = $("#mini-time");
+        if (time) time.textContent = `Còn: ${miniGameState.timeLeft}s`;
+
+        if (miniGameState.timeLeft <= 0) {
+            finishMiniGame(false);
+        }
+    }, 1000);
+
+    miniGameLoop();
+}
+
+function spawnMiniItem() {
+    if (!miniGameState.active) return;
+
+    const board = $("#mini-game-board");
+    if (!board) return;
+
+    const item = document.createElement("div");
+    item.className = "mini-fall";
+    item.textContent = MINI_GLYPHS[Math.floor(Math.random() * MINI_GLYPHS.length)];
+
+    const x = 8 + Math.random() * 84;
+    const speed = 1.6 + Math.random() * 1.6;
+
+    item.style.left = x + "%";
+
+    board.appendChild(item);
+
+    miniGameState.items.push({
+        el: item,
+        x,
+        y: -42,
+        speed,
+        caught: false,
+    });
+}
+
+function moveMiniCatcher(clientX) {
+    const board = $("#mini-game-board");
+    const catcher = $("#mini-catcher");
+
+    if (!board || !catcher) return;
+
+    const rect = board.getBoundingClientRect();
+    let x = ((clientX - rect.left) / rect.width) * 100;
+
+    x = Math.max(9, Math.min(91, x));
+
+    miniGameState.catcherX = x;
+    catcher.style.left = x + "%";
+}
+
+function miniGameLoop() {
+    if (!miniGameState.active) return;
+
+    const board = $("#mini-game-board");
+    const catcher = $("#mini-catcher");
+
+    if (!board || !catcher) return;
+
+    const boardRect = board.getBoundingClientRect();
+    const catcherRect = catcher.getBoundingClientRect();
+
+    miniGameState.items.forEach(item => {
+        if (item.caught) return;
+
+        item.y += item.speed;
+        item.el.style.transform = `translateY(${item.y}px)`;
+
+        const itemRect = item.el.getBoundingClientRect();
+
+        const hit =
+            itemRect.bottom >= catcherRect.top &&
+            itemRect.top <= catcherRect.bottom &&
+            itemRect.right >= catcherRect.left &&
+            itemRect.left <= catcherRect.right;
+
+        if (hit) {
+            item.caught = true;
+            item.el.remove();
+
+            miniGameState.score++;
+
+            const score = $("#mini-score");
+            const note = $("#mini-note");
+
+            if (score) score.textContent = `Đã hứng: ${miniGameState.score}/${MINI_TARGET}`;
+            if (note) note.textContent = miniGameState.score < MINI_TARGET ? "Đúng rồi, tiếp nha." : "Đủ rồi đó.";
+
+            playSfx("pop", 0.25);
+            playTone(720 + miniGameState.score * 55, 0.22, "sine", 0.11);
+
+            if (miniGameState.score >= MINI_TARGET) {
+                finishMiniGame(true);
+            }
+        }
+
+        if (item.y > boardRect.height + 60) {
+            item.caught = true;
+            item.el.remove();
+        }
+    });
+
+    miniGameState.items = miniGameState.items.filter(item => !item.caught);
+
+    miniGameState.raf = requestAnimationFrame(miniGameLoop);
+}
+
+function finishMiniGame(won) {
+    if (!miniGameState.active) return;
+
+    miniGameState.active = false;
+    stopMiniGameTimers();
+
+    const note = $("#mini-note");
+    const start = $("#mini-start");
+
+    if (won) {
+        if (note) note.textContent = "Xong. Qua câu hỏi nhỏ tiếp nha.";
+        smallConfetti(70);
+        playSfx("chime", 0.28);
+
+        setTimeout(() => {
+            goTo("feelingCheck");
+        }, 900);
+    } else {
+        if (note) note.textContent = "Không sao, chơi lại hoặc bỏ qua cũng được.";
+        if (start) {
+            start.disabled = false;
+            start.textContent = "Chơi lại";
+        }
+    }
+}
+
+document.addEventListener("pointermove", (e) => {
+    if (currentScene !== "miniGame") return;
+    moveMiniCatcher(e.clientX);
+}, { passive: true });
+
+document.addEventListener("pointerdown", (e) => {
+    if (currentScene !== "miniGame") return;
+    moveMiniCatcher(e.clientX);
+}, { passive: true });
+
+document.addEventListener("click", (e) => {
+    if (e.target.closest("#mini-start")) {
+        resumeAudio();
+        primeSfxElements();
+        startMiniGame();
+    }
+
+    if (e.target.closest("#mini-skip")) {
+        resumeAudio();
+        primeSfxElements();
+        playSfx("click", 0.3);
+        stopMiniGameTimers();
+        goTo("feelingCheck");
+    }
+});
 
 // ================== Feeling check ==================
 const noBtn = $("#fc-no");
@@ -915,6 +1395,33 @@ function initMatch() {
     grid.innerHTML = "";
 
     if (status) status.textContent = "";
+
+    let skipBtn = $("#match-skip");
+
+    if (!skipBtn && grid.parentNode) {
+        skipBtn = document.createElement("button");
+        skipBtn.id = "match-skip";
+        skipBtn.type = "button";
+        skipBtn.textContent = "Bỏ qua game này →";
+        skipBtn.style.marginTop = "14px";
+        skipBtn.style.border = "0";
+        skipBtn.style.borderRadius = "999px";
+        skipBtn.style.padding = "11px 16px";
+        skipBtn.style.background = "rgba(255, 143, 176, 0.18)";
+        skipBtn.style.color = "#7a3a51";
+        skipBtn.style.fontWeight = "900";
+        skipBtn.style.cursor = "pointer";
+
+        grid.parentNode.appendChild(skipBtn);
+
+        skipBtn.addEventListener("click", () => {
+            resumeAudio();
+            primeSfxElements();
+            playSfx("click", 0.3);
+            matchState.advancing = true;
+            goTo("reminders");
+        });
+    }
 
     matchState = {
         firstPick: null,
